@@ -1,0 +1,3 @@
+foo(x:int):bool
+
+goo(x:bool):bool

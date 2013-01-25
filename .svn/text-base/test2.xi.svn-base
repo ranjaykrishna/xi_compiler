@@ -1,0 +1,31 @@
+use test1;
+
+main():int{
+  z:int = 3;
+  gcd(z);
+  z = gcd2(z);
+  return z;
+}
+
+gcd(a:int) {
+  a = a * a
+  a = gcd2(3)
+  gcd3(a,true)
+}
+
+gcd2(b:int):int	{
+  a:int = 3
+  c:int = 3
+  a = c
+  a,c = colin()
+  return b+1
+}
+
+gcd3(b:int, t:bool) {
+	b = 4
+	t = false
+}
+
+colin() : int, int {
+  return 3,4
+}

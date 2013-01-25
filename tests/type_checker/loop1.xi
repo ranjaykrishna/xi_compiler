@@ -1,0 +1,1 @@
+func() {  m:bool = true  if(m)    x:int = 3  x = x + 4}

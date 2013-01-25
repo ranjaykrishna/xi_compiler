@@ -1,0 +1,200 @@
+.text
+.globl _Imain_i
+_Imain_i: 
+movq %rsp,%rbp
+pushq %rcx
+pushq %rdx
+pushq %rsp
+pushq %rsi
+pushq %rdi
+pushq %r8
+pushq %r9
+pushq %r10
+pushq %r11
+pushq %rbx
+pushq %rbp
+movq $10,%r12
+pushq %r12
+popq %r13
+movq %r13,%rdi
+movq $0,%rbx
+bt $3,%rsp
+jnc rspJmp0
+movq $1,%r12
+jmp rspend0
+rspJmp0: 
+movq $0,%r12
+rspend0: 
+bt $3,%rbp
+jnc rbpJmp0
+movq $1,%r13
+jmp rbpend0
+rbpJmp0: 
+movq $0,%r13
+rbpend0: 
+test %r12,%r13
+jnp extraPush0
+pushq $0
+movq $1,%rbx
+extraPush0: 
+call _Ifactorial_ii
+cmp $1,%rbx
+jne extraPop0
+popq %r13
+extraPop0: 
+movq $0,%rbx
+popq %rbp
+popq %rbx
+popq %r11
+popq %r10
+popq %r9
+popq %r8
+popq %rdi
+popq %rsi
+popq %rsp
+popq %rdx
+popq %rcx
+pushq %rax
+popq %rax
+ret1: 
+cmp %rbp,%rsp
+je retend1
+popq %r12
+jmp ret1
+retend1: 
+ret
+_block7End_0:
+_block0End_0:
+.globl _Ifactorial_ii
+_Ifactorial_ii: 
+movq %rsp,%rbp
+movq %rdi,%r12
+pushq %r12
+movq -8(%rbp),%r12
+pushq %r12
+movq $1,%r12
+pushq %r12
+popq %r13
+popq %r12
+cmp %r13,%r12
+js _op2
+movq $0,%r12
+jmp _end2
+_op2: 
+movq $1,%r12
+_end2: 
+pushq %r12
+popq %r12
+cmp $1,%r12
+je if_true2
+_block8_End_2:
+popq %r13
+popq %r13
+if_false3: 
+movq -8(%rbp),%r12
+pushq %r12
+movq $1,%r12
+pushq %r12
+popq %r13
+popq %r12
+subq %r13,%r12
+pushq %r12
+pushq %rcx
+pushq %rdx
+pushq %rsp
+pushq %rsi
+pushq %rdi
+pushq %r8
+pushq %r9
+pushq %r10
+pushq %r11
+pushq %rbx
+pushq %rbp
+movq 0(%rbp),%r12
+pushq %r12
+popq %r13
+movq %r13,%rdi
+movq $0,%rbx
+bt $3,%rsp
+jnc rspJmp3
+movq $1,%r12
+jmp rspend3
+rspJmp3: 
+movq $0,%r12
+rspend3: 
+bt $3,%rbp
+jnc rbpJmp3
+movq $1,%r13
+jmp rbpend3
+rbpJmp3: 
+movq $0,%r13
+rbpend3: 
+test %r12,%r13
+jnp extraPush3
+pushq $0
+movq $1,%rbx
+extraPush3: 
+call _Ifactorial_ii
+cmp $1,%rbx
+jne extraPop3
+popq %r13
+extraPop3: 
+movq $0,%rbx
+popq %rbp
+popq %rbx
+popq %r11
+popq %r10
+popq %r9
+popq %r8
+popq %rdi
+popq %rsi
+popq %rsp
+popq %rdx
+popq %rcx
+pushq %rax
+_block11End_0:
+_block10_End_2:
+popq %r13
+popq %r13
+_block16_End_1:
+popq %r13
+movq -8(%rbp),%r12
+pushq %r12
+movq -8(%rbp),%r12
+pushq %r12
+popq %r13
+popq %r12
+imul %r13,%r12
+pushq %r12
+popq %rax
+ret4: 
+cmp %rbp,%rsp
+je retend4
+popq %r12
+jmp ret4
+retend4: 
+ret
+_block12_End_1:
+popq %r13
+_block13_End_2:
+popq %r13
+popq %r13
+_block5End_0:
+jmp if_end4
+if_true2: 
+movq $1,%r12
+pushq %r12
+popq %rax
+ret5: 
+cmp %rbp,%rsp
+je retend5
+popq %r12
+jmp ret5
+retend5: 
+ret
+_block1End_0:
+jmp if_end4
+if_end4: 
+_block6End_1:
+popq %r13
+.text

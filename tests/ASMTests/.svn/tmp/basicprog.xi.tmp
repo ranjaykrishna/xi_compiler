@@ -1,0 +1,18 @@
+use io
+use conv
+
+main(args:int[][]){
+<<<<<<< .mine
+	return
+=======
+	a:bool = true
+	if(!a) {
+	  return
+	}
+	else {
+	  println("YEA")
+	  return
+	}
+>>>>>>> .r1004
+	
+}

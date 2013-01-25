@@ -1,0 +1,179 @@
+K 25
+svn:wc:ra_dav:version-url
+V 94
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/1121/tests/ASMTests/testcases/2009-testcases
+END
+array-invalid-1.xi
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/781/tests/ASMTests/testcases/2009-testcases/array-invalid-1.xi
+END
+statement-if.xi
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/781/tests/ASMTests/testcases/2009-testcases/statement-if.xi
+END
+array-invalid-2.xi
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/781/tests/ASMTests/testcases/2009-testcases/array-invalid-2.xi
+END
+hello.xi
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/781/tests/ASMTests/testcases/2009-testcases/hello.xi
+END
+type-int-0.xi
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/781/tests/ASMTests/testcases/2009-testcases/type-int-0.xi
+END
+type-int-1.xi
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/781/tests/ASMTests/testcases/2009-testcases/type-int-1.xi
+END
+type-bool-0.xi
+K 25
+svn:wc:ra_dav:version-url
+V 108
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/781/tests/ASMTests/testcases/2009-testcases/type-bool-0.xi
+END
+divide-signed-def.xi
+K 25
+svn:wc:ra_dav:version-url
+V 114
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/781/tests/ASMTests/testcases/2009-testcases/divide-signed-def.xi
+END
+vars-0.xi
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/781/tests/ASMTests/testcases/2009-testcases/vars-0.xi
+END
+array-valid-0.xi
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/781/tests/ASMTests/testcases/2009-testcases/array-valid-0.xi
+END
+vars-1.xi
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/781/tests/ASMTests/testcases/2009-testcases/vars-1.xi
+END
+type-bool-0.c
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/781/tests/ASMTests/testcases/2009-testcases/type-bool-0.c
+END
+vars-2.xi
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/781/tests/ASMTests/testcases/2009-testcases/vars-2.xi
+END
+assert.ixi
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/792/tests/ASMTests/testcases/2009-testcases/assert.ixi
+END
+vars-3.xi
+K 25
+svn:wc:ra_dav:version-url
+V 103
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/781/tests/ASMTests/testcases/2009-testcases/vars-3.xi
+END
+divide-signed.xi
+K 25
+svn:wc:ra_dav:version-url
+V 110
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/781/tests/ASMTests/testcases/2009-testcases/divide-signed.xi
+END
+conv.ixi
+K 25
+svn:wc:ra_dav:version-url
+V 102
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/792/tests/ASMTests/testcases/2009-testcases/conv.ixi
+END
+io.ixi
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/1121/tests/ASMTests/testcases/2009-testcases/io.ixi
+END
+int-pythag.xi
+K 25
+svn:wc:ra_dav:version-url
+V 107
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/781/tests/ASMTests/testcases/2009-testcases/int-pythag.xi
+END
+statement-break.xi
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/781/tests/ASMTests/testcases/2009-testcases/statement-break.xi
+END
+sort.xi
+K 25
+svn:wc:ra_dav:version-url
+V 101
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/781/tests/ASMTests/testcases/2009-testcases/sort.xi
+END
+type-bool-shortcircuit-2.xi
+K 25
+svn:wc:ra_dav:version-url
+V 121
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/781/tests/ASMTests/testcases/2009-testcases/type-bool-shortcircuit-2.xi
+END
+type-array-0.xi
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/781/tests/ASMTests/testcases/2009-testcases/type-array-0.xi
+END
+type-bool-shortcircuit.xi
+K 25
+svn:wc:ra_dav:version-url
+V 119
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/781/tests/ASMTests/testcases/2009-testcases/type-bool-shortcircuit.xi
+END
+type-array-1.xi
+K 25
+svn:wc:ra_dav:version-url
+V 109
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/781/tests/ASMTests/testcases/2009-testcases/type-array-1.xi
+END
+compare-signed.xi
+K 25
+svn:wc:ra_dav:version-url
+V 111
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/781/tests/ASMTests/testcases/2009-testcases/compare-signed.xi
+END
+type-array-init.xi
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/781/tests/ASMTests/testcases/2009-testcases/type-array-init.xi
+END
+nonmain.xi
+K 25
+svn:wc:ra_dav:version-url
+V 104
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/781/tests/ASMTests/testcases/2009-testcases/nonmain.xi
+END
+array-invalid-0.xi
+K 25
+svn:wc:ra_dav:version-url
+V 112
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/781/tests/ASMTests/testcases/2009-testcases/array-invalid-0.xi
+END

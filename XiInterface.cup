@@ -1,0 +1,169 @@
+package rak248.xi.parser;
+
+import java_cup.runtime.*;
+import rak248.xi.lexer.*;
+import rak248.xi.SyntaxNode;
+import rak248.xi.typeChecker.Type;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+
+scan with {: return ((JFlexLexer)getScanner()).next(); :}
+
+parser code  {: 
+  
+  public void report_error(String message, Object info) {
+    StringBuffer m = new StringBuffer("Error ");
+
+    if (info instanceof java_cup.runtime.Symbol) 
+      m.append( "("+info.toString()+")" );
+     
+    m.append(" : "+message);
+   
+    System.out.println(m);
+  }
+   
+  public void report_fatal_error(String message, Object info) {
+    report_error(message, info);
+    throw new RuntimeException("Fatal Syntax Error");
+  }
+:};
+
+
+terminal XiSymbol AND;//    &
+terminal XiSymbol BOOL;//            bool
+terminal XiSymbol BREAK;//           break
+terminal XiSymbol CLOSE_BRACE;//     }
+terminal XiSymbol CLOSE_BRACKET;//   ]
+terminal XiSymbol CLOSE_PAREN;//     )
+terminal XiSymbol COLON;//           :
+terminal XiSymbol COMMA;//           ,
+terminal XiSymbol DIVIDE;// /
+terminal XiSymbol ELSE;//            else
+terminal XiSymbol EQUAL;//  ==
+terminal XiSymbol FALSE;//           false
+terminal XiSymbol GEQ;//    >=
+terminal XiSymbol GETS;//            =
+terminal XiSymbol GT;//     >
+terminal XiSymbol IF;//              if
+terminal XiSymbol INT;//             int
+terminal XiSymbol LENGTH;//          length
+terminal XiSymbol LEQ;//    <=
+terminal XiSymbol LT;//     <
+terminal XiSymbol MINUS;//  -
+terminal XiSymbol MODULO;// %
+terminal XiSymbol NOT;//             !
+terminal XiSymbol NOT_EQUAL;//       !=
+terminal XiSymbol OPEN_BRACE;//      {
+terminal XiSymbol OPEN_BRACKET;//    [
+terminal XiSymbol OPEN_PAREN;//      (
+terminal XiSymbol OR;//     |
+terminal XiSymbol PLUS;//   +
+terminal XiSymbol RETURN;//          return
+terminal XiSymbol SEMICOLON;//       ;
+terminal XiSymbol TIMES;//  *
+terminal XiSymbol TRUE;//            true
+terminal XiSymbol UNDERSCORE;//      _
+terminal XiSymbol USE;//             use
+terminal XiSymbol WHILE;//           while
+
+terminal XiSymbol INTEGER_LITERAL;
+terminal XiSymbol CHAR_LITERAL;
+terminal XiSymbol STRING_LITERAL;
+terminal XiSymbol IDENTIFIER; // name
+
+terminal XiSymbol CLASS;			//OO Xi terminals
+terminal XiSymbol EXTENDS;
+terminal XiSymbol NEW;
+terminal XiSymbol THIS;
+terminal XiSymbol PERIOD;
+terminal XiSymbol NULL;
+
+
+terminal XiSymbol CONTINUE;//        continue
+
+	
+non terminal CompUnitNode                                  goal;
+non terminal CompUnitNode                                  compilation_unit;
+non terminal UseNode                                       use_opt;
+non terminal FunctionsNode                                 functions;
+non terminal FunctionDecNode                               function;
+non terminal FunctionDecNode                               procedure;
+non terminal LinkedHashMap<String,Type>                    parameters;
+non terminal ArrayList<Type>                               return_type;
+non terminal Type                                          primitive_type;
+non terminal Type                                          parameter_type;
+non terminal Integer                                       parameter_brackets;
+non terminal LinkedHashMap<String,Type>                    parameters_paren;
+
+non terminal BodyNode                                      body;
+non terminal ClassNode                                     class;
+non terminal ExtendsNode                                   extends_opt;
+non terminal ArrayList<String>                             identifiers;
+non terminal ClassBodyNode                                 class_body;
+non terminal StatementNode                                 field;
+
+
+start with goal;
+
+// The Syntactic Grammar
+goal ::= compilation_unit:c 							{: RESULT = c; :} ;
+
+compilation_unit ::= use_opt:u body:fs 			{: RESULT = new CompUnitNode(u,fs,u.position(),fs.position()); :};
+
+body ::= body:cf functions:f  {: cf.add(f); RESULT = cf; :}
+      |  body:cf class:c      {: cf.add(c); RESULT = cf; :}
+	  |  functions:f          {: RESULT = new BodyNode(f); :}
+	  |  class:c              {: RESULT = new BodyNode(c); :};
+	  
+class ::= CLASS:cl IDENTIFIER:name extends_opt:ext OPEN_BRACE class_body:b CLOSE_BRACE:c 
+          {: RESULT = new ClassNode(name.value(), ext,b, cl.position(), c.position()); :};
+		  
+extends_opt ::= EXTENDS:ext identifiers:d {: RESULT = new ExtendsNode(d,ext.position()); :}
+             |                            {: RESULT = new ExtendsNode(); :};   
+			 
+identifiers ::= identifiers:i COMMA IDENTIFIER:id  {: i.add(id.value()); RESULT = i; :}
+             |  IDENTIFIER:id                      {: ArrayList<String> i = new ArrayList<String>(); i.add(id.value()); RESULT = i; :};			 
+			 
+class_body ::= class_body:cb functions:f {: cb.add(f); RESULT = cb; :}
+            |  class_body:cb field:f     {: cb.add(f); RESULT = cb; :}
+			|  field:f                   {: ClassBodyNode cb = new ClassBodyNode(); cb.add(f); RESULT = cb; :}
+			|  functions:f               {: ClassBodyNode cb = new ClassBodyNode(); cb.add(f); RESULT = cb; :};
+
+field ::= identifiers:id COLON:c parameter_type:t {: RESULT = new DeclarationNode(id,t,c.position()); :};	
+
+use_opt ::= use_opt:u USE:useT IDENTIFIER:id 				{: RESULT = u.addUse(id.value(),u.position(),useT.position(),id.position()); :}
+          | 											{: RESULT = new UseNode(); :};
+
+functions ::= function:f 									{: RESULT = new FunctionsNode(f,f.position(),f.position()); :}
+		    | procedure:f 									{: RESULT = new FunctionsNode(f,f.position(),f.position()); :};
+
+function ::= IDENTIFIER:id parameters_paren:p return_type:r
+		{: RESULT = new FunctionDecNode(id.value(),p,r,new StatementsNode(),null,id.position(),id.position()); :};
+														
+procedure ::= IDENTIFIER:id parameters_paren:p
+		{: RESULT = new FunctionDecNode(id.value(),p,new ArrayList<Type>(),new StatementsNode(),null,id.position(),id.position()); :};
+
+parameters_paren ::= OPEN_PAREN parameters:p CLOSE_PAREN {: RESULT = p; :};
+
+parameters ::= IDENTIFIER:id COLON parameter_type:t 	{: LinkedHashMap<String,Type> mappi = new LinkedHashMap<String,Type>(); mappi.put(id.value(),t); RESULT = mappi; :}
+             | parameters:p COMMA IDENTIFIER:id COLON parameter_type:t {: p.put(id.value(),t); RESULT = p; :}
+             | 											{: RESULT = new LinkedHashMap<String,Type>(); :};
+
+return_type ::= COLON parameter_type:t 					{: ArrayList<Type> ar = new ArrayList<Type>(); ar.add(t); RESULT = ar; :}
+              | return_type:rt COMMA parameter_type:t   {: rt.add(t); RESULT = rt; :};
+
+parameter_type ::= primitive_type:t {: RESULT = t; :}
+				| primitive_type:t parameter_brackets:b 
+					{: switch (t.type) { 
+						case INT: RESULT = new Type(Type.typeEnum.INT_ARRAY,b); break;
+						case BOOL: RESULT = new Type(Type.typeEnum.BOOL_ARRAY,b); break;
+                        case ABSTRACT: RESULT = new Type(Type.typeEnum.ABSTRACT_ARRAY,b,t.getObject()); break;						
+					   } :};
+
+parameter_brackets ::= OPEN_BRACKET CLOSE_BRACKET {: RESULT = 1; :}
+           | parameter_brackets:b OPEN_BRACKET CLOSE_BRACKET {: RESULT = b + 1; :};
+
+primitive_type ::= INT {: RESULT = new Type(Type.typeEnum.INT); :} 
+                 | BOOL {: RESULT = new Type(Type.typeEnum.BOOL); :}
+				 | IDENTIFIER:id {: RESULT = new Type(Type.typeEnum.ABSTRACT,id.value()); :};
+

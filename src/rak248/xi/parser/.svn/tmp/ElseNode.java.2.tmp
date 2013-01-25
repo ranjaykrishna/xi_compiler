@@ -1,0 +1,56 @@
+package rak248.xi.parser;
+
+import java.util.List;
+
+import edu.cornell.cs.cs4120.util.VisualizableTreeNode;
+import edu.cornell.cs.cs4120.xi.Position;
+import rak248.xi.Location;
+import rak248.xi.SyntaxNode;
+import rak248.xi.typeChecker.TypeError;
+
+public class ElseNode extends ConditionNode{
+
+	private StatementNode s;
+	
+	public ElseNode(StatementNode c, Position position, Position position2) {
+		s = c;
+		addChild(c);
+		Position newPos = new Location(position.unit(),position.lineStart(),position2.lineEnd(),position.columnStart(),position2.columnEnd());
+		setPosition(newPos);
+	}
+	
+	public static void foldElse(SyntaxNode node) throws TypeError {
+		//System.out.println(".");
+		for(int i = ((List<VisualizableTreeNode>) node.getChildren()).size() - 1; i >= 0; i--) {
+			SyntaxNode child = (SyntaxNode) ((List<VisualizableTreeNode>) node.getChildren()).get(i);
+			foldElse(child);
+			if(child instanceof ElseNode) {
+				SyntaxNode ifNode = (SyntaxNode) ((List<VisualizableTreeNode>) node.getChildren()).get(i - 1);
+				if(ifNode instanceof ElseNode) {
+					System.out.println(ifNode);
+					SyntaxNode lastChild = (SyntaxNode) ifNode.getChildren().get(ifNode.getChildren().size() - 1);
+					if(lastChild instanceof ConditionNode) {
+						node.getChildren().remove(i);
+						lastChild.addChild(((ElseNode) child).getStatementNode());
+					} else {
+						String message = "TypeError: unmatched else at " + ifNode.position();
+						throw new TypeError(message);
+					}
+				}
+				else if(ifNode instanceof ConditionNode) {
+					node.getChildren().remove(i);
+					ifNode.addChild(((ElseNode) child).getStatementNode());
+					ifNode.setLabel("matched if statement");
+				} else {
+					String message = "TypeError: unmatched else at " + ifNode.position();
+					throw new TypeError(message);
+				}
+			}
+		}
+	}
+	
+	public StatementNode getStatementNode() {
+		return s;
+	}
+
+}

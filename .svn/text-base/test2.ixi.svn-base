@@ -1,0 +1,5 @@
+gcd(a:int)
+
+gcd2(b:int):int
+
+gcd3(b:int,t:bool) 

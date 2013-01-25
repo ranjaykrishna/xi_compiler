@@ -1,0 +1,538 @@
+package rak248.testing;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Stack;
+
+import rak248.util.VisualizableIRNode;
+import rak248.xi.Location;
+import rak248.xi.SyntaxIR;
+import rak248.xi.ir.CJumpIR;
+import rak248.xi.ir.CallIR;
+import rak248.xi.ir.ConstIR;
+import rak248.xi.ir.EseqIR;
+import rak248.xi.ir.ExpIR;
+import rak248.xi.ir.ExpressionIR;
+import rak248.xi.ir.JumpIR;
+import rak248.xi.ir.LabelIR;
+import rak248.xi.ir.Mangler;
+import rak248.xi.ir.MemIR;
+import rak248.xi.ir.MoveIR;
+import rak248.xi.ir.NameIR;
+import rak248.xi.ir.OpIR;
+import rak248.xi.ir.ReturnIR;
+import rak248.xi.ir.SeqIR;
+import rak248.xi.ir.TempIR;
+import rak248.xi.parser.VarNode;
+import rak248.xi.typeChecker.Type;
+import rak248.xi.typeChecker.Type.typeEnum;
+
+public class LowIRInterpreter {
+	private HashMap<String,SeqIR> labels;
+	private HashMap<TempIR,Object> temps;
+	private HashMap<Integer,Object> memory;
+	private Stack<SeqIR> returnStack;
+	private SyntaxIR root;
+	private boolean calling;
+	
+	//Hacky variable to help with findLabel and findCall
+	private boolean foundLabel;
+	private Object prevpop;
+	
+	//the return from the main method.
+	public int returnVariable;
+	
+	//Currently assumes that the top it is passed is the CompUnitIR
+	//And the "main" function is the first function in the program
+	public LowIRInterpreter(SyntaxIR top){
+		labels = new HashMap<String,SeqIR>();
+		temps = new HashMap<TempIR,Object>();
+		memory = new HashMap<Integer,Object>();
+		returnStack = new Stack<SeqIR>();
+		
+		SeqIR program = new SeqIR("root");
+		/*CallIR call = new CallIR(new NameIR("_Imain_i"));
+		top.getChildren().add(0, new ExpIR(call));*/
+		program.setChildren(top.getChildren());
+		root = program;
+	}
+	
+	public void runProgram() throws JumpException, InterpreterException{
+		try{
+			callFunc((SeqIR) root, null);
+			//interpretStatement(root, null);
+		}catch(InterpreterException e){
+			System.out.println("Program Exited");
+		}
+	}
+	
+	public void interpretStatement(VisualizableIRNode s, VisualizableIRNode parent) throws JumpException, InterpreterException{
+		System.out.println("InterpState: "+s);
+		if(s instanceof ReturnIR) {
+			interpretFunction((ReturnIR) s, parent);
+		}
+		else if(s instanceof SeqIR){
+			SeqIR seq = (SeqIR) s;
+			ArrayList<VisualizableIRNode> children = seq.getChildren();
+			for( VisualizableIRNode child: children){
+				try{
+					interpretStatement(child, seq);
+				}catch(JumpException j){
+					//The jump exception should contain the sequence of instructions to begin executing.
+					//The parent is null since the sequence it returns starts at the root.
+					interpretStatement(j.getSeq(),null);//Since we know it is a sequence we don't have to catch the exception here
+				}
+			}
+		}else if(s instanceof MoveIR){
+			MoveIR m = (MoveIR) s;
+			//The first child is the destination and should be either TempIR or MemIR
+			VisualizableIRNode dest = m.getChildren().get(0);
+			//The second child is always some type of expression
+			Object exp = interpretExpression(m.getChildren().get(1),s);
+			if(dest instanceof TempIR){
+				TempIR temp = (TempIR) dest;
+				temps.put(temp, exp);
+			}else if(dest instanceof MemIR){
+				MemIR mem = (MemIR) dest;
+				memory.put((Integer) interpretExpression(mem,s), exp);
+			}
+		}else if(s instanceof LabelIR){//This might be useless in the new implementation
+			//Need to store the location of this label in the table
+			LabelIR l = (LabelIR) s;
+			//We need to know what would be the statement after this according to the
+			//parent sequence
+			foundLabel =false;
+			//labels.put(l.getName(), findLabel(root, null, l.getName()));
+		}else if(s instanceof JumpIR){
+			//Currently the child is a label not an expression that evaluates to a memory address
+			JumpIR j = (JumpIR) s;
+			NameIR l = (NameIR) j.getChildren().get(0);
+			foundLabel = false;
+			throw new JumpException(findLabel(root, null, l.getLabel()));
+		}else if(s instanceof CJumpIR){
+			CJumpIR c = (CJumpIR) s;
+			//First child is the expression that we test against
+			Object obj = interpretExpression(c.getChildren().get(0),s);
+			Integer test;
+			if(obj instanceof Boolean) {
+				Boolean bool = (Boolean) interpretExpression(c.getChildren().get(0),s);
+				if(bool == true) {
+					test = 1;}
+				else {test = 0;}
+			} else {
+				test = (Integer) obj;
+			}
+			
+			//Integer test = (Integer) interpretExpression(c.getChildren().get(0),s);
+			//Second child is the true label
+			foundLabel = false;
+			if(test.intValue()==1){
+				throw new JumpException(findLabel(root,null,c.getlt()));
+			}else if(test.intValue()==0){//third child is the false label
+				throw new JumpException(findLabel(root,null,(c.getlf())));
+			}else{
+				System.err.println("Couldn't jump correctly");
+			}
+		}else if(s instanceof ExpIR){
+			ExpIR exp = (ExpIR) s;
+			interpretExpression(exp.getChildren().get(0),s);
+		}
+	}
+	
+	public Object interpretExpression(VisualizableIRNode s, VisualizableIRNode parent) throws JumpException, InterpreterException{
+		if(s instanceof ConstIR){
+			ConstIR c = (ConstIR) s;
+			return new Integer(c.getValue());
+		}else if(s instanceof TempIR){
+			TempIR t = (TempIR) s;
+			for(TempIR key: temps.keySet()) {
+				if(key.label().equals(t.label())) {
+					return temps.get(key);
+				}
+			}
+			return temps.get(t);
+		}else if(s instanceof CallIR){
+			CallIR c = (CallIR) s;
+			//The first child is the name of the function that we should jump to
+			//But the way we implemented interpreting NameIR is to return the sequence to run at that name
+			//SeqIR functionSeq = findLabel(root,null,findNamesLabel(root,null,((NameIR)c.getChildren().get(0)).getLabel()));
+			foundLabel = false;
+			SeqIR functionSeq = findLabel(root,null,((NameIR)c.getChildren().get(0)).getLabel());
+			System.out.println("funcSeq:"+functionSeq);
+
+			//We also have to setup the parameters of the function
+			Type retType;
+			ArrayList<Type> paramType = new ArrayList<Type>();
+			//To do this we will parse the mangled function name
+			String name = ((NameIR)c.getChildren().get(0)).getLabel();
+			//The first two characters are always _I
+			name = name.substring(2);
+			//Now we need to read characters until we get to a single underscore
+			name = name.substring(name.lastIndexOf("_")+1);//+1 so we don't include the underscore
+			//The next character determines the return type
+			//p for a procedure
+			StringBuilder nameB = new StringBuilder(name);
+			if(name.startsWith("p")){
+				retType = new Type(typeEnum.UNIT);
+				nameB.deleteCharAt(0);
+			}else if(name.startsWith("t")){//t for tuple
+				nameB.deleteCharAt(0);
+				int size = Integer.parseInt(nameB.substring(0, 1));
+				nameB.deleteCharAt(0);
+				Type[] tupleList = new Type[size];
+				for(int i = 0;i<size;i++){//move through all types in the tuple
+					tupleList[i] = popType(nameB, 0);
+				}				
+				retType = new Type(typeEnum.TUPLE,tupleList);
+			}else{//otherwise it is a single type
+				retType = popType(nameB,0);
+			}
+			
+			//Now that we have parsed the return type we will parse the parameters
+			while(nameB.length()!=0){
+				paramType.add(popType(nameB, 0));
+			}
+			//Before we overwrite the current set of "argsi" we should save them
+			//int index = 0;
+			//while(temps.containsKey(new TempIR("args"+index))){
+			//	saveArgs(index,0);
+			//	index++;
+			//}
+			
+			//Now that we have the types and order of the parameters we can set the correct temps
+			for(int i = 0; i < paramType.size(); i++){
+				pushArgs(i,0);
+				//System.out.println("temps:"+temps.keySet());
+				//System.out.println("val:"+temps.get(temps.keySet().toArray()[0]));
+				Object value = interpretExpression(c.getChildren().get(i+1),s);
+				//System.out.println("value:"+value);
+				temps.put(new TempIR("args"+i), interpretExpression(c.getChildren().get(i+1),s));			
+			}
+			//Before we jump to the function we need to do one thing
+			//Push the sequence that follows this jump to the return stack
+			foundLabel = false;
+			SeqIR testCallSeq = findCall(root,null,c);
+			System.out.println("callSeq:"+testCallSeq);
+			returnStack.push(findCall(root,null,c));
+			//Now we can make the jump to the actual function
+			Object result = callFunc(functionSeq,parent);
+			
+			//After the call we need to pop off the args
+			for(int i = 0; i < paramType.size(); i++){
+				popArgs(i,0);
+			}
+			
+			return result;
+		}else if(s instanceof OpIR){
+			OpIR op = (OpIR) s;
+			if(op.getChildren().size()==1){//unary operations
+				if(op.returnsBool()){
+					Boolean b = (Boolean) interpretExpression(op.getChildren().get(0),s);
+					return new Boolean(!b.booleanValue());
+				}else if(op.returnsInt()){
+					Integer i = (Integer) interpretExpression(op.getChildren().get(0),s);
+					return -i.intValue();
+				}
+			}else if(op.getChildren().size()==2){
+				Object op1 = interpretExpression(op.getChildren().get(0),s);
+				Object op2 = interpretExpression(op.getChildren().get(1),s);
+				if(op.returnsBool()){
+					if(op1 instanceof Integer){//the program type checked so
+						                       //the other operand is also an integer
+						Integer i1 = (Integer) op1;
+						Integer i2 = (Integer) op2;
+						switch(op.getOp()){
+						case EQUAL:
+							return new Boolean(i1.equals(i2));
+						case NOT_EQUAL:
+							return new Boolean(!(i1.equals(i2)));
+						case LT:
+							return new Boolean(i1.compareTo(i2)<0);
+						case LEQ:
+							return new Boolean(i1.compareTo(i2)<=0);
+						case GEQ:
+							return new Boolean(i1.compareTo(i2)>=0);
+						case GT:
+							return new Boolean(i1.compareTo(i2)>0);	
+						}
+					}else if(op1 instanceof Boolean){
+						Boolean b1 = (Boolean) op1;
+						Boolean b2 = (Boolean) op2;
+						switch(op.getOp()){
+						case EQUAL:
+							return new Boolean(b1.equals(b2));
+						case NOT_EQUAL:
+							return new Boolean(!b1.equals(b2));
+						}
+					}
+				}else if(op.returnsInt()){
+					Integer i1 = (Integer) op1;
+					Integer i2 = (Integer) op2;
+					switch(op.getOp()){
+					case PLUS:
+						return new Integer(i1+i2);
+					case MINUS:
+						return new Integer(i1-i2);
+					case LSHIFT:
+						return new Integer(i1.intValue()<<i2.intValue());
+					case RSHIFT:
+						return new Integer(i1.intValue()>>i2.intValue());
+					case TIMES:
+						return new Integer(i1*i2);
+					case DIVIDE:
+						return new Integer(i1/i2);
+					}
+				}
+			}
+		}else if(s instanceof NameIR){
+			NameIR n = (NameIR) s;
+			//Not sure what to do here, Name should return the memory address
+			//of label but we don't really have "memory" in the interpreter
+			//For now we will just return the LabelIR in hopes of being able to jump to it
+			foundLabel = false;
+			return findNamesLabel(root, null, n.getLabel());			
+		}else if(s instanceof MemIR){
+			MemIR m = (MemIR) s;
+			return memory.get(interpretExpression(((MemIR) s).getChildren().get(0),s));
+		}else if(s instanceof EseqIR){
+			EseqIR es = (EseqIR) s;
+			interpretStatement(es.getS(), s);
+	        return interpretExpression(es.getE(),s);
+		}else{
+			System.err.println("Unexpected ExpressionIR type "+s.getClass());
+		}
+		System.err.println("Unable to interpret expression "+s);
+		return null;
+	}
+	
+	private void popArgs(int num, int depth) {
+		//first generate the temp we are checking for
+		String name = "args"+num;
+		for(int i = 0; i < depth; i++){
+			name += "_";
+		}
+		if(temps.containsKey(new TempIR(name))){
+			//we need to move this down and pull the others as well
+			temps.put(new TempIR(name), temps.get(new TempIR(name+"_")));
+			//now pull down the rest
+			popArgs(num,depth+1);
+		}
+		return;		
+	}
+
+	private void pushArgs(int num,int depth) {
+		//first generate the temp we are checking for
+		String name = "args"+num;
+		for(int i = 0;i < depth; i++){
+			name += "_";
+		}
+		if(temps.containsKey(new TempIR(name))){
+			//Save the one ahead of us first
+			pushArgs(num,depth+1);
+			//We already have one of these so save it
+			temps.put(new TempIR(name+"_"), temps.get(new TempIR(name)));
+		}else{
+			//we don't have this depth of args yet so we can keep it here
+		}
+		return;
+	}
+
+	public SeqIR findLabel(SyntaxIR s,SyntaxIR parent, String l){
+		if(l.startsWith("LABEL:")) {
+			l = l.substring(7, l.length());
+		}
+		if(s instanceof LabelIR){
+			LabelIR lab = (LabelIR) s;
+			//System.out.println("Found:"+((LabelIR)s).getName());
+			//System.out.println(l);
+			if (lab.getName().equals(l)){
+			//We found the label!
+			//So now we need to start storing the sequence in result
+				foundLabel = true;//labels are leaf so no need to recurse.
+				return null;
+			}
+			return null;
+		}else if(foundLabel){
+			SeqIR ret = new SeqIR("InterpreterCreated");
+			ret.addIR(s);
+			return ret;
+		}else{
+			//This isn't the label so we recurse
+			SeqIR ret = new SeqIR("InterpreterCreatedNonLeaf");
+			for(VisualizableIRNode ir :s.getChildren()){
+				SeqIR testSeq = findLabel((SyntaxIR) ir,s,l);
+				if(testSeq != null){
+					ret.getChildren().addAll(testSeq.getChildren());
+					//ret.addIR(testSeq);
+				}
+			}
+			if(!foundLabel){
+				//It wasn't in the children so we return null
+				return null;
+			}else{
+				//It was found so ret should have something
+				//There is a corner case if the label is the last thing in a sequence
+				SeqIR seq = new SeqIR("LabelCollapsedInterpreter");
+				for(VisualizableIRNode node : ret.getChildren()) {
+					if(node instanceof ReturnIR) {
+						seq.addChild((SyntaxIR) node);
+						return seq;
+					}
+					seq.addChild((SyntaxIR) node);
+					System.out.println("label seq: " + seq);
+				}
+				/*for(int i = ret.getChildren().size(); i >=0; i--) {
+					VisualizableIRNode node = ret.getChildren().get(i);
+					if(node instanceof ReturnIR) {
+						for(int j = 0; j < i; j++) {
+							seq.addChild((SyntaxIR) ret.getChildren().get(j));
+							return seq;
+						}
+					}
+				}*/
+				return ret;
+			}
+		}
+	}
+	
+	//This should find all the code that needs executing after the given CallIR
+	public SeqIR findCall(SyntaxIR s, SyntaxIR parent,CallIR c){
+		if(s instanceof CallIR && s.equals(c)){
+			//We found the call!
+			//So now we need to start storing the sequence in result
+			foundLabel = true;//calls are leaf so no need to recurse.
+			return null;
+		}else if(foundLabel){
+			SeqIR ret = new SeqIR("InterpreterCreated");
+			ret.addIR(s);
+			return ret;
+		}else{
+			//This isn't the label so we recurse
+			SeqIR ret = new SeqIR("InterpreterCreatedNonLeaf");
+			for(VisualizableIRNode ir :s.getChildren()){
+				SeqIR testSeq = findCall((SyntaxIR) ir,s,c);
+				if(testSeq != null && calling == false){
+					ret.getChildren().addAll(testSeq.getChildren());
+					//ret.addIR(testSeq);
+				}
+			}
+			if(!foundLabel){
+				//It wasn't in the children so we return null
+				return null;
+			}else{
+				//It was found so ret should have something
+				//There is a corner case if the label is the last thing in a sequence
+				calling = false;
+				SeqIR seq = new SeqIR("CallCollapsedInterpreter");
+				for(VisualizableIRNode node : ret.getChildren()) {
+					if(node instanceof ReturnIR) {
+						seq.addChild((SyntaxIR) node);
+						return seq;
+					}
+					seq.addChild((SyntaxIR) node);
+					System.out.println("label seq: " + seq);
+				}
+				return ret;
+			}
+		}
+	}
+	//Similar to findLabel/Call but for Names
+	public LabelIR findNamesLabel(SyntaxIR s,SyntaxIR parent, String n){
+		if(s instanceof LabelIR && ((LabelIR)s).getName().equals(n)){
+			//We found the name!.
+			return (LabelIR) s;
+		}else{
+			//This isn't the label so we recurse
+			SeqIR ret = new SeqIR("InterpreterCreatedNonLeaf");
+			for(VisualizableIRNode ir :s.getChildren()){
+				LabelIR testSeq = findNamesLabel((SyntaxIR) ir,s,n);
+				if(testSeq != null){
+					return testSeq;
+				}
+			}
+		}
+		//We couldn't find the label...
+		return null;
+	}
+	
+	public Object callFunc(SeqIR seq, VisualizableIRNode parent) throws JumpException, InterpreterException{
+		for(VisualizableIRNode s: seq.getChildren()){
+			Object temp = interpretFunction((SyntaxIR) s, parent);
+			if(temp != null){
+				return temp;
+			}
+		}
+		//Something went wrong
+		return null;
+	}
+	
+	public Object interpretFunction(SyntaxIR s, VisualizableIRNode parent) throws JumpException, InterpreterException{
+		System.out.println("interp func called: " + s.getClass());
+		if(s instanceof ReturnIR){
+			ReturnIR r = (ReturnIR) s;
+			//The first child is the expression to return
+			//But for procedures there will be no children
+			if(r.getChildren().size()==0){
+				//all functions only have empty ReturnIR objects 
+				//so all we do is jump to the correct place
+				if(returnStack.isEmpty()){
+					//This must be the main method so lets print out the correct value
+					System.out.println("The program returned with void");
+					throw new InterpreterException("Program ended");
+				}
+				returnStack.pop();
+				return new Object();//Return nothing since it gets thrown away anyways
+			}else{//We have a function with return values
+				if(returnStack.isEmpty()){
+					//This must be the main method so lets print out the correct value
+					System.out.println("The program returned with a value "+interpretExpression(r.getChildren().get(0),r));
+					returnVariable = (Integer) interpretExpression(r.getChildren().get(0),r);
+					throw new InterpreterException("Program ended");
+				}
+				returnStack.pop();
+				if(r.getChildren().size()>1){
+					ArrayList<Object> rets = new ArrayList<Object>();
+					for(VisualizableIRNode syn: r.getChildren()){
+						rets.add(interpretExpression(syn, r));
+					}
+					return rets;
+				}else{
+					return interpretExpression(r.getChildren().get(0),r);
+				}
+				
+			}
+		}else{//Must be some other form of statement
+			//interpretStatement(s, parent);
+			try{
+				interpretStatement(s, parent);
+			}catch(JumpException j){
+				//The jump exception should contain the sequence of instructions to begin executing.
+				//The parent is null since the sequence it returns starts at the root.
+				interpretStatement(j.getSeq(),null);//Since we know it is a sequence we don't have to catch the exception here
+			}
+			return null;
+		}
+	}
+	
+	private Type popType(StringBuilder s, int arrayDepth){
+		if(s.toString().startsWith("a")){
+			//Array type
+			s.deleteCharAt(0);
+			return popType(s,arrayDepth+1);
+		}else if(s.toString().startsWith("b")){
+			s.deleteCharAt(0);
+			if(arrayDepth>0){
+				return new Type(typeEnum.BOOL_ARRAY,arrayDepth);
+			}
+			return new Type(typeEnum.BOOL);
+		}else if(s.toString().startsWith("i")){
+			s.deleteCharAt(0);
+			if(arrayDepth>0){
+				return new Type(typeEnum.INT_ARRAY,arrayDepth);
+			}
+			return new Type(typeEnum.INT);
+		}else{
+			return null;
+		}
+	}
+}

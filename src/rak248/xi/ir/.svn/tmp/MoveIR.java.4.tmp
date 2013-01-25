@@ -1,0 +1,134 @@
+package rak248.xi.ir;
+
+import java.util.ArrayList;
+
+import rak248.asm.AddressingMode;
+import rak248.asm.TempTable;
+import rak248.asm.Tile;
+import rak248.util.VisualizableIRNode;
+import rak248.xi.SyntaxIR;
+
+public class MoveIR extends StatementIR {
+
+	public MoveIR(ExpressionIR e1, SyntaxIR e2) {
+		addChild(e1);
+		addChild(e2);
+		setLabel("MOVE");
+	}
+	
+	public SyntaxIR foldESEQ() {
+		SyntaxIR child1 = ((SyntaxIR) getChildren().get(0)).foldESEQ();
+		SyntaxIR child2 = ((SyntaxIR) getChildren().get(1)).foldESEQ();
+		getChildren().set(0, child1);
+		getChildren().set(1, child2);
+		SeqIR ret = new SeqIR();
+		if(!(child1 instanceof EseqIR) && !(child2 instanceof EseqIR)) {
+			return this;
+		} else if(child1 instanceof EseqIR && !(child2 instanceof EseqIR)) {
+			System.out.println("seq"+((EseqIR) child1).getS());
+			ret.addChild(((EseqIR) child1).getS());
+			ret.addChild(new MoveIR(((EseqIR) child1).getE(), (ExpressionIR) child2));
+		} else if(!(child1 instanceof EseqIR) && (child2 instanceof EseqIR)) {
+<<<<<<< .mine
+			System.out.println(this);
+			System.out.println("seq2??? "+((EseqIR) child2).getS());
+			SeqIR innerSeq = (SeqIR) ((SyntaxIR) child2.getChildren().get(0));
+			SyntaxIR label = (SyntaxIR) ((SyntaxIR)innerSeq.getChildren().get(innerSeq.getChildren().size()-1));
+			if(label instanceof LabelIR && ((LabelIR)label).getName().startsWith("_block")){
+				innerSeq.getChildren().remove(innerSeq.getChildren().size()-1);
+				((EseqIR) child2).setChildren(child2.getChildren());
+			}			
+=======
+			System.out.println("seq2"+((EseqIR) child2).getS());
+			SeqIR innerSeq = (SeqIR) ((SyntaxIR) child2.getChildren().get(0));
+			SyntaxIR label = (SyntaxIR) ((SyntaxIR)innerSeq.getChildren().get(innerSeq.getChildren().size()-1));
+			if(label instanceof LabelIR && ((LabelIR)label).getName().startsWith("_block")){
+				innerSeq.getChildren().remove(innerSeq.getChildren().size()-1);
+				((EseqIR) child2).setChildren(child2.getChildren());
+			}			
+>>>>>>> .r709
+			MoveIR opir = new MoveIR((ExpressionIR) child1, ((EseqIR) child2).getE());
+			ret.addChild(((EseqIR) child2).getS());
+			ret.addChild(opir);
+			if(label instanceof LabelIR && ((LabelIR)label).getName().startsWith("_block")){
+				ret.addChild(label);
+			}
+		} else {
+			System.out.println("seq3"+((EseqIR) child1).getS());
+			System.out.println("seq4"+((EseqIR) child2).getS());
+
+			ret.addChild(((EseqIR) child1).getS());
+			ExpressionIR child1E = ((EseqIR) child1).getE();
+			ret.addChild(((EseqIR) child2).getS());
+			MoveIR opir = new MoveIR(child1E, ((EseqIR) child2).getE());
+			ret.addChild(opir);
+		}
+		return ret;
+	}
+	
+	public SyntaxIR foldCALL(){
+		ArrayList<VisualizableIRNode> ch = new ArrayList<VisualizableIRNode>();
+		for (VisualizableIRNode node: getChildren()){
+			SyntaxIR child = ((SyntaxIR) node).foldCALL();
+			ch.add(child);
+		}
+		setChildren(ch);
+		return this;
+	}
+	
+	public ArrayList<Tile> generateTile(TempTable tTable) {
+		SyntaxIR left = ((SyntaxIR) getChildren().get(0));
+		SyntaxIR right = ((SyntaxIR) getChildren().get(1));
+		ArrayList<Tile> resultant = new ArrayList<Tile>();
+		ArrayList<Tile> rightTile = right.generateTile(tTable);
+		resultant.addAll(rightTile);
+		if(left instanceof TempIR) {
+			//ArrayList<Tile> rightTile = right.generateTile(tTable);
+			Tile t1 = new Tile();
+			Tile t2 = new Tile();
+			t1.setScore(1);
+			t2.setScore(1);
+			t1.setOpCode("popq");
+			t1.setSrcAddrMode(new AddressingMode("r13"));
+			if(tTable.lookup((TempIR) left) == null) {
+				tTable.add((TempIR) left, (tTable.getStackSize()+1)*8);
+				//t3 = new Tile(1, "push", new AddressingMode("r13"), null);
+				tTable.pushCalled();
+				//System.out.println(tTable);
+				//resultant.add(t3);
+			} else{
+				t2.setOpCode("movq");
+				t2.setSrcAddrMode(new AddressingMode("r13"));
+				Tile t3 = null;
+				t2.setDestAddrMode(new AddressingMode(-1*tTable.lookup((TempIR) left), "rbp"));
+				resultant.add(t1);
+				resultant.add(t2);
+			}
+		}
+		// left is a MemIR
+		else {
+			//ArrayList<Tile> rightTile = right.generateTile(tTable);
+			ArrayList<Tile> leftTile = left.generateTile(tTable);
+			//resultant.addAll(rightTile);
+			Tile t1 = new Tile();
+			Tile t2 = new Tile();
+			t1.setScore(1);
+			t2.setScore(1);
+			t1.setOpCode("popq");
+			t1.setSrcAddrMode(new AddressingMode("r13"));
+			//System.out.println("left:"+left);
+			resultant.addAll(leftTile);
+			Tile t3 = new Tile();
+			t3.setScore(1);
+			t2.setOpCode("popq");
+			t2.setSrcAddrMode(new AddressingMode("r12"));
+			t3.setOpCode("movq");
+			t3.setSrcAddrMode(new AddressingMode("r12"));
+			t3.setDestAddrMode(new AddressingMode(true, "r13"));
+			resultant.add(t1);
+			resultant.add(t2);
+			resultant.add(t3);
+		}
+		return resultant;
+	}
+}

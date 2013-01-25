@@ -1,0 +1,6 @@
+use io;
+
+main(args:int[][]){
+  
+  println("hello world!");
+}

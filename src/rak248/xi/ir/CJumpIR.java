@@ -1,0 +1,132 @@
+package rak248.xi.ir;
+
+import java.util.ArrayList;
+
+import rak248.asm.AddressingMode;
+import rak248.asm.TempTable;
+import rak248.asm.Tile;
+import rak248.util.VisualizableIRNode;
+import rak248.xi.SyntaxIR;
+
+public class CJumpIR extends StatementIR {
+
+	private String lt, lf;
+	public boolean hasElse;
+	public boolean isWhile;
+	private ExpressionIR cond;
+	
+	public CJumpIR(ExpressionIR condition, String lt, String lf,boolean h,boolean w) {
+		addChild(condition);
+		hasElse = h;
+		isWhile = w;
+		this.lt = lt;
+		this.lf = lf;
+		updateLabel();
+	}
+	
+	public SyntaxIR foldESEQ() {
+		//System.out.println(getChildren());
+		SyntaxIR child = ((SyntaxIR) getChildren().get(0)).foldESEQ();
+		getChildren().set(0, child);
+		//System.out.println("child:"+child);
+		if(child instanceof EseqIR) {
+			//System.out.println("seq:"+((EseqIR) child).getS());
+			SeqIR ret = new SeqIR();
+			ret.extend(((EseqIR) child).getS());
+			CJumpIR jIR = new CJumpIR(((EseqIR) child).getE(), lt, lf,hasElse,isWhile);
+			ret.addChild(jIR);
+			ret.extend(((EseqIR) child).getL());
+			//System.out.println("new child if eseq:"+Optimize.foldSEQ(ret));
+			return ret;
+		}
+		return this;
+	}
+	
+	public SyntaxIR foldCALL(){
+		SyntaxIR child = ((SyntaxIR) getChildren().get(0)).foldCALL();
+		ArrayList<VisualizableIRNode> ch = new ArrayList<VisualizableIRNode>();
+		ch.add(child);
+		setChildren(ch);
+		return this;
+		/*if(child instanceof TempIR){
+			return this;
+		}
+		else{
+			SeqIR seq  = new SeqIR();
+			TempIR temp = new TempIR("_call"+getFreshLabel());
+			MoveIR move = new MoveIR(temp,child);
+			seq.addChild(move);
+			this.getChildren().set(0,temp);
+			seq.addChild(this);
+			return seq;
+		}*/
+		
+	}
+	
+	public String getlt() {
+		return lt;
+	}
+	
+	public String getlf() {
+		return lf;
+	}
+	
+	public void setlt(String l){
+		lt = l;
+		updateLabel();
+	}
+	
+	public void setlf(String l){
+		lf = l;
+		updateLabel();
+	}
+	
+	public void updateLabel(){
+		cond = (ExpressionIR) this.getChildren().get(0);
+		setLabel("CJUMP: " + cond.label() + ": " + lt + ", " + lf);
+	}
+
+	/*
+	 * pop r12
+	 * cmp 1, r12
+	 * je lt
+	 */
+	public ArrayList<Tile> generateTile(TempTable tTable) {
+		SyntaxIR child = (SyntaxIR) getChildren().get(0);
+		ArrayList<Tile> childTile = child.generateTile(tTable);
+		ArrayList<Tile> result = new ArrayList<Tile>();
+		if(lt.startsWith("LABEL"))
+			lt = lt.substring(7, lt.length());
+		Tile t2 = new Tile(1, "cmp", new AddressingMode(1), new AddressingMode("r12"));
+		Tile t3 = new Tile(1, "je", new AddressingMode(lt, true), null);
+		result.addAll(childTile);
+		result.add(t2);
+		result.add(t3);
+		return result;
+	}
+	
+	public ArrayList<Tile> generateTileWindows(TempTable tTable) {
+		SyntaxIR child = (SyntaxIR) getChildren().get(0);
+		ArrayList<Tile> childTile = child.generateTileWindows(tTable);
+		ArrayList<Tile> result = new ArrayList<Tile>();
+		if(lt.startsWith("LABEL"))
+			lt = lt.substring(7, lt.length());
+		Tile t2 = new Tile(1, "cmp", new AddressingMode(1), new AddressingMode("r12"));
+		Tile t3 = new Tile(1, "je", new AddressingMode(lt, true), null);
+		result.addAll(childTile);
+		result.add(t2);
+		result.add(t3);
+		return result;
+	}
+	
+	public String prettyPrint(){
+		String ret = "";
+		if (isWhile){
+			ret = "while ("+((SyntaxIR) getChildren().get(0)).prettyPrint() +")";
+		}
+		else{
+			ret = "if ("+((SyntaxIR) getChildren().get(0)).prettyPrint() +")";
+		}
+		return ret;
+	}
+}

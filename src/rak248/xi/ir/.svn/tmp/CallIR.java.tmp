@@ -1,0 +1,244 @@
+package rak248.xi.ir;
+
+import java.util.ArrayList;
+
+import rak248.asm.AddressingMode;
+import rak248.asm.TempTable;
+import rak248.asm.Tile;
+import rak248.util.VisualizableIRNode;
+import rak248.xi.SyntaxIR;
+
+public class CallIR extends ExpressionIR {
+	
+	//constructor used for LENGTH call
+	public CallIR(NameIR funcName, SyntaxIR arg) {
+		setLabel("CALL");
+		addChild(funcName);
+		addChild(arg);
+	}
+	
+	public CallIR() {
+		setLabel("CALL");
+	}
+	
+	public CallIR(NameIR funcName) {
+		setLabel("CALL");
+		addChild(funcName);
+	}
+
+	public SyntaxIR foldESEQ() {
+		NameIR child1 = (NameIR) getChildren().get(0);
+		if(getChildren().size() == 1) {
+			return this;
+		}
+		SyntaxIR child2 = ((SyntaxIR) getChildren().get(1)).foldESEQ();
+		getChildren().set(0, child1);
+		getChildren().set(1, child2);
+		if(child2 instanceof EseqIR) {
+			EseqIR ret = new EseqIR();
+			ret.addChild(((EseqIR) child2).getS());
+			ExpIR temp = new ExpIR(new CallIR((NameIR) child1, ((EseqIR) child2).getE()));
+			ret.addChild(temp);
+			return ret;
+		}
+		return this;
+	}
+	
+	public SyntaxIR foldCALL(){
+		EseqIR eseq = new EseqIR();
+		CallIR call = new CallIR();
+		for (VisualizableIRNode node: getChildren()){
+			if (node instanceof CallIR){
+				SyntaxIR inside = ((CallIR) node).foldESEQ();
+				TempIR temp = new TempIR("_call"+getFreshLabel());
+				MoveIR move = new MoveIR(temp,inside);
+				eseq.addChild(move);
+				call.addChild(temp);
+			}
+			else{
+				call.addChild(((SyntaxIR) node).foldCALL());
+			}
+		}
+		eseq.addChild(call);
+		return eseq;
+	}
+	
+	public ArrayList<Tile> generateTile(TempTable tTable){
+		ArrayList<Tile> ret = new ArrayList<Tile>();
+		//Before we deal with the current arguments we need to save all registers
+		//that we are supposed to according to the ABI
+		//The Caller-saved registers and the order we will push them in is
+		//rcx,rdx,rsp,rsi,rdi,r8,r9,r10,r11
+		AddressingMode addrRAX = new AddressingMode("rax");
+		AddressingMode addrRCX = new AddressingMode("rcx");
+		ret.add(new Tile(1, "pushq", addrRCX, null));
+		tTable.pushCalled();
+		AddressingMode addrRDX = new AddressingMode("rdx");
+		ret.add(new Tile(1, "pushq", addrRDX, null));
+		tTable.pushCalled();
+		AddressingMode addrRSP = new AddressingMode("rsp");
+		ret.add(new Tile(1, "pushq", addrRSP, null));
+		tTable.pushCalled();
+		AddressingMode addrRSI = new AddressingMode("rsi");
+		ret.add(new Tile(1, "pushq", addrRSI, null));
+		tTable.pushCalled();
+		AddressingMode addrRDI = new AddressingMode("rdi");
+		ret.add(new Tile(1, "pushq", addrRDI, null));
+		tTable.pushCalled();
+		AddressingMode addrR8 = new AddressingMode("r8");
+		ret.add(new Tile(1, "pushq", addrR8, null));
+		tTable.pushCalled();
+		AddressingMode addrR9 = new AddressingMode("r9");
+		ret.add(new Tile(1, "pushq", addrR9, null));
+		tTable.pushCalled();
+		AddressingMode addrR10 = new AddressingMode("r10");
+		ret.add(new Tile(1, "pushq", addrR10, null));
+		tTable.pushCalled();
+		AddressingMode addrR11 = new AddressingMode("r11");
+		ret.add(new Tile(1, "pushq", addrR11, null));
+		tTable.pushCalled();
+		
+		//Now that we have saved the caller-saved registers we get the tilings
+		//for the arguments given to the function
+		ArrayList<ArrayList<Tile>> argumentTileLists = new ArrayList<ArrayList<Tile>>();
+		for(int i = 1; i < getChildren().size(); i++){
+			argumentTileLists.add(((SyntaxIR)getChildren().get(i)).generateTile(tTable));
+		}
+		//Now that we have the arguments we must push them on the stack and or registers
+		AddressingMode addr12 = new AddressingMode("r12");
+		AddressingMode addrR13 = new AddressingMode("r13");
+		switch(argumentTileLists.size()){
+		case 6:
+			//push to r9
+			ret.addAll(argumentTileLists.get(5));
+			//the argument tile will push the value on the stack so we pop into r13
+			ret.add(new Tile(1,"popq",addrR13,null));
+			tTable.popCalled();
+			//then we can move it to r9
+			ret.add(new Tile(1,"movq",addrR13,addrR9));
+		case 5:
+			//push to r8
+			ret.addAll(argumentTileLists.get(4));
+			//the argument tile will push the value on the stack so we pop into r13
+			ret.add(new Tile(1,"popq",addrR13,null));
+			tTable.popCalled();
+			//then we can move it to r8
+			ret.add(new Tile(1,"movq",addrR13,addrR8));
+		case 4:
+			//push to rcx
+			ret.addAll(argumentTileLists.get(3));
+			//the argument tile will push the value on the stack so we pop into r13
+			ret.add(new Tile(1,"popq",addrR13,null));
+			tTable.popCalled();
+			//then we can move it to rcx
+			ret.add(new Tile(1,"movq",addrR13,addrRCX));
+		case 3:
+			//push to rdx
+			ret.addAll(argumentTileLists.get(2));
+			//the argument tile will push the value on the stack so we pop into r13
+			ret.add(new Tile(1,"popq",addrR13,null));
+			tTable.popCalled();
+			//then we can move it to rdx
+			ret.add(new Tile(1,"movq",addrR13,addrRDX));
+		case 2:
+			//push to rsi
+			ret.addAll(argumentTileLists.get(1));
+			//the argument tile will push the value on the stack so we pop into r13
+			ret.add(new Tile(1,"popq",addrR13,null));
+			tTable.popCalled();
+			//then we can move it to rsi
+			ret.add(new Tile(1,"movq",addrR13,addrRSI));
+		case 1:
+			//push to rdi
+			ret.addAll(argumentTileLists.get(0));
+			//the argument tile will push the value on the stack so we pop into r13
+			ret.add(new Tile(1,"popq",addrR13,null));
+			tTable.popCalled();
+			//then we can move it to rdi
+			ret.add(new Tile(1,"movq",addrR13,addrRDI));
+		case 0:
+			//Do nothing
+			break;
+		default://we have more than six arguments
+			//push the first six arguments to registers
+			//push to r9
+			ret.addAll(argumentTileLists.get(5));
+			//the argument tile will push the value on the stack so we pop into r13
+			ret.add(new Tile(1,"popq",addrR13,null));
+			tTable.popCalled();
+			//then we can move it to r9
+			ret.add(new Tile(1,"movq",addrR13,addrR9));
+			//push to r8
+			ret.addAll(argumentTileLists.get(4));
+			//the argument tile will push the value on the stack so we pop into r13
+			ret.add(new Tile(1,"popq",addrR13,null));
+			tTable.popCalled();
+			//then we can move it to r8
+			ret.add(new Tile(1,"movq",addrR13,addrR8));
+			tTable.popCalled();
+			//push to rcx
+			ret.addAll(argumentTileLists.get(3));
+			//the argument tile will push the value on the stack so we pop into r13
+			ret.add(new Tile(1,"popq",addrR13,null));
+			tTable.popCalled();
+			//then we can move it to rcx
+			ret.add(new Tile(1,"movq",addrR13,addrRCX));
+			//push to rdx
+			ret.addAll(argumentTileLists.get(2));
+			//the argument tile will push the value on the stack so we pop into r13
+			ret.add(new Tile(1,"popq",addrR13,null));
+			tTable.popCalled();
+			//then we can move it to rdx
+			ret.add(new Tile(1,"movq",addrR13,addrRDX));
+			//push to rsi
+			ret.addAll(argumentTileLists.get(1));
+			//the argument tile will push the value on the stack so we pop into r13
+			ret.add(new Tile(1,"popq",addrR13,null));
+			tTable.popCalled();
+			//then we can move it to rsi
+			ret.add(new Tile(1,"movq",addrR13,addrRSI));
+			//push to rdi
+			ret.addAll(argumentTileLists.get(0));
+			//the argument tile will push the value on the stack so we pop into r13
+			ret.add(new Tile(1,"popq",addrR13,null));
+			tTable.popCalled();
+			//then we can move it to rdi
+			ret.add(new Tile(1,"movq",addrR13,addrRDI));
+
+			//Now we begin pushing the remaining args onto the stack
+			for(int i = argumentTileLists.size()-1; i >= 6; i++){
+				//Since the tiles end with pushq we don't need to pop then push
+				ret.addAll(argumentTileLists.get(i));
+				
+			}
+		}
+		//Now we can finally make the call
+		AddressingMode func = new AddressingMode(((NameIR)getChildren().get(0)).getLabel(), true);
+		ret.add(new Tile(1,"call",func,null));
+		//after the function returns we need to restore the caller-saved registers
+		//assuming the ret call moves the stack pointer back to before the arguments we should 
+		ret.add(new Tile(1, "popq", addrR11, null));
+		tTable.popCalled();
+		ret.add(new Tile(1, "popq", addrR10, null));
+		tTable.popCalled();
+		ret.add(new Tile(1, "popq", addrR9, null));
+		tTable.popCalled();
+		ret.add(new Tile(1, "popq", addrR8, null));
+		tTable.popCalled();
+		ret.add(new Tile(1, "popq", addrRDI, null));
+		tTable.popCalled();
+		ret.add(new Tile(1, "popq", addrRSI, null));
+		tTable.popCalled();
+		ret.add(new Tile(1, "popq", addrRSP, null));
+		tTable.popCalled();
+		ret.add(new Tile(1, "popq", addrRDX, null));
+		tTable.popCalled();
+		ret.add(new Tile(1, "popq", addrRCX, null));
+		tTable.popCalled();
+		
+		//After the function returns we should push the return value in case we are called as an expression
+		ret.add(new Tile(1,"pushq",addrRAX,null));
+		tTable.pushCalled();
+		return ret;
+	}
+}

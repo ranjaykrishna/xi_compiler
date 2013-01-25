@@ -1,0 +1,45 @@
+package rak248.xi.ir;
+
+import java.util.ArrayList;
+
+import rak248.asm.TempTable;
+import rak248.asm.Tile;
+import rak248.util.VisualizableIRNode;
+import rak248.xi.SyntaxIR;
+
+public class MemIR extends ExpressionIR {
+
+	public MemIR(ExpressionIR exprIR) {
+		setLabel("MEM");
+		addChild(exprIR);
+	}
+	
+	public SyntaxIR foldESEQ() {
+		SyntaxIR child1 = ((SyntaxIR) getChildren().get(0)).foldESEQ();
+		getChildren().set(0, child1);
+		if(child1 instanceof EseqIR) {
+			EseqIR result = new EseqIR();
+			result.addChild(((EseqIR) child1).getS());
+			result.addChild(new MemIR(((EseqIR) child1).getE()));
+			return result;
+		}
+		return this;
+	}
+	
+	public SyntaxIR foldCALL(){
+		ArrayList<VisualizableIRNode> ch = new ArrayList<VisualizableIRNode>();
+		for (VisualizableIRNode node: getChildren()){
+			SyntaxIR child = ((SyntaxIR) node).foldCALL();
+			ch.add(child);
+		}
+		setChildren(ch);
+		return this;
+	}
+	
+	public ArrayList<Tile> generateTile(TempTable tTable){
+		//We only have one child which evaluates to a memory address we need to push
+		ArrayList<Tile> t = ((SyntaxIR) getChildren().get(0)).generateTile(tTable);
+		//System.out.println(t);
+		return (t);
+	}
+}

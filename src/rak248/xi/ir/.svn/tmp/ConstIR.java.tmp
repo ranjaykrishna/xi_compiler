@@ -1,0 +1,55 @@
+package rak248.xi.ir;
+
+import java.util.ArrayList;
+
+import rak248.asm.AddressingMode;
+import rak248.asm.TempTable;
+import rak248.asm.Tile;
+import rak248.util.VisualizableIRNode;
+import rak248.xi.SyntaxIR;
+
+public class ConstIR extends ExpressionIR{
+	
+	private int value;
+	
+	public ConstIR(int value) {
+		this.setValue(value);
+		setLabel("CONST: " + value);
+	}
+	
+	public ConstIR(int value, String bool){
+		this.setValue(value);
+		setLabel("CONST: " + bool);
+	}
+
+	public void setValue(int value) {
+		this.value = value;
+	}
+
+	public int getValue() {
+		return value;
+	}
+	
+	public SyntaxIR foldESEQ() {
+		return this;
+	}
+	
+	public SyntaxIR foldCALL() {
+		return this;
+	}
+	
+	public ArrayList<Tile> generateTile(TempTable tTable) {
+		Tile t = new Tile();
+		t.setScore(1);
+		t.setOpCode("movq");
+		t.setDestAddrMode(new AddressingMode("r12"));
+		t.setSrcAddrMode(new AddressingMode(value));
+		Tile t2 = new Tile(1, "pushq", new AddressingMode("r12"), null);
+		tTable.pushCalled();
+		ArrayList<Tile> result = new ArrayList<Tile>();
+		result.add(t);
+		result.add(t2);
+		return result;
+	}
+
+}

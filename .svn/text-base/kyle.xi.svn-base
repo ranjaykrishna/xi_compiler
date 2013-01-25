@@ -1,0 +1,5 @@
+hello_world(){
+	x:bool = !true
+	a:int = -1
+	c:int = -(2+4)*5/10
+}

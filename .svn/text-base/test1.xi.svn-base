@@ -1,0 +1,23 @@
+main() : int{
+    z:int[3][6];
+    z[0][0] = 1;
+	return func(3);
+}
+
+hellsBells():int,int {
+	return 1,2
+}
+
+
+
+func(a:int) :int {
+  x:int = 3
+  y:int = 1
+  a = y + 2
+  return a
+}
+
+BackInBlack(){
+	s:bool
+	s = false
+}

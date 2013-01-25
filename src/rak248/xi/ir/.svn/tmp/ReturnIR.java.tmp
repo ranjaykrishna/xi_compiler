@@ -1,0 +1,107 @@
+package rak248.xi.ir;
+
+import java.util.ArrayList;
+
+import rak248.asm.AddressingMode;
+import rak248.asm.TempTable;
+import rak248.asm.Tile;
+import rak248.util.VisualizableIRNode;
+import rak248.xi.SyntaxIR;
+
+public class ReturnIR extends StatementIR {
+	
+	public ReturnIR(ExpressionIR exprIR) {
+		this();
+		addChild(exprIR);
+	}
+	
+	public ReturnIR() {
+		setLabel("RETURN");
+	}
+	
+	public SyntaxIR foldESEQ() {
+		SeqIR seq = new SeqIR();
+		ReturnIR ret = new ReturnIR();
+		for (VisualizableIRNode node: getChildren()){
+			SyntaxIR child = ((SyntaxIR) node).foldESEQ();
+			if (child instanceof EseqIR){
+				SeqIR s = ((EseqIR) child).getS();
+				SeqIR l = ((EseqIR) child).getL();
+				ExpressionIR e = ((EseqIR) child).getE();
+				seq.addChild(s);
+				seq.addChild(l);
+				ret.addChild(e);
+			}
+			else{
+				ret.addChild(child);
+			}
+		}
+<<<<<<< .mine
+		seq.addChild(ret);
+		return seq;
+=======
+		SyntaxIR child = ((SyntaxIR) children.get(0)).foldESEQ();
+		if(child instanceof EseqIR) {
+			ret = new SeqIR();
+			ret.addChild(((EseqIR) child).getS());
+			ret.addChild(new ReturnIR(((EseqIR) child).getE()));
+			ret.addChild(((EseqIR) child).getL());
+		} else {
+			ret = this;
+		}
+		return ret;
+>>>>>>> .r737
+	}
+	
+	public SyntaxIR foldCALL(){
+		SeqIR seq = new SeqIR();
+		ReturnIR ret = new ReturnIR();
+		for (VisualizableIRNode node: getChildren()){
+			SyntaxIR child = ((SyntaxIR) node).foldCALL();
+			if (node instanceof CallIR){
+				TempIR temp = new TempIR("_call"+getFreshLabel());
+				MoveIR move = new MoveIR(temp,child);
+				ret.addChild(temp);
+				seq.addChild(move);
+			}else{
+				ret.addChild(child);
+			}
+		}
+		seq.addChild(ret);
+		return seq;
+	}
+	
+	/*
+	 * If return IR is called with a temp starting with "_ret", then we can assume
+	 * that all of the ret's are at the top of the stack.
+	 */
+	public ArrayList<Tile> generateTile(TempTable tTable) {
+		ArrayList<Tile> result = new ArrayList<Tile>();
+		if(getChildren().size() > 1) {
+			for(int i = 0; i < getChildren().size(); i ++) {
+				result.addAll(((SyntaxIR) getChildren().get(i)).generateTile(tTable));
+				Tile t = new Tile(1, "popq", new AddressingMode(i*8, "rdi"), null);
+				result.add(t);
+			}
+			//result.add(new Tile(1, "movq", new AddressingMode("rdi"), new AddressingMode("rax")));
+		}
+		else if(getChildren().size() == 1){
+			ArrayList<Tile> retVal = ((SyntaxIR) getChildren().get(0)).generateTile(tTable);
+			result.addAll(retVal);
+			Tile t = new Tile(1, "popq", new AddressingMode("rax"), null);
+			result.add(t);
+		}//Before we return we need to pop all the local variables and throw them away
+		AddressingMode rbp = new AddressingMode("rbp");
+		AddressingMode rsp = new AddressingMode("rsp");
+		Integer newLabel = tTable.getNewJumpLabel();
+		result.add(new Tile(1, "ret" + newLabel + ": ", null, null));
+		result.add(new Tile(1, "cmp", rbp, rsp));
+		result.add(new Tile(1, "je", new AddressingMode("retend" + newLabel, true), null));
+		result.add(new Tile(1,"popq",new AddressingMode("r12"),null));
+		result.add(new Tile(1, "jmp", new AddressingMode("ret" + newLabel, true), null));
+		result.add(new Tile(1, "retend" + newLabel + ": ", null, null));
+		Tile t2 = new Tile(1, "ret", null, null);
+		result.add(t2);
+		return result;
+	}
+}

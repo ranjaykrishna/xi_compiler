@@ -1,0 +1,17 @@
+xiAnd (a:bool, b:bool) : bool 
+
+xiOr (a:bool, b:bool) : bool 
+
+myProcedure(x:int) 
+
+twoRet() : int, bool 
+
+foo() 
+
+goo() : int 
+
+hoo() :int 
+
+joo() : int 
+
+koo(c:bool) : bool 

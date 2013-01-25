@@ -1,0 +1,131 @@
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/1121/tests/valid_programs
+END
+test1.xi
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/388/tests/valid_programs/test1.xi
+END
+kmp.ixi
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/390/tests/valid_programs/kmp.ixi
+END
+array2.xi
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/388/tests/valid_programs/array2.xi
+END
+enigma.xi
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/390/tests/valid_programs/enigma.xi
+END
+array3.xi
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/388/tests/valid_programs/array3.xi
+END
+array4.xi
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/388/tests/valid_programs/array4.xi
+END
+mkmatrix.ixi
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/390/tests/valid_programs/mkmatrix.ixi
+END
+ifbad.xi
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/388/tests/valid_programs/ifbad.xi
+END
+ifgood.xi
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/518/tests/valid_programs/ifgood.xi
+END
+arrayDefFail1.xi
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/388/tests/valid_programs/arrayDefFail1.xi
+END
+arrayDefFail2.xi
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/388/tests/valid_programs/arrayDefFail2.xi
+END
+arrayDefFail3.xi
+K 25
+svn:wc:ra_dav:version-url
+V 91
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/388/tests/valid_programs/arrayDefFail3.xi
+END
+conv.ixi
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/390/tests/valid_programs/conv.ixi
+END
+io.ixi
+K 25
+svn:wc:ra_dav:version-url
+V 82
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/1121/tests/valid_programs/io.ixi
+END
+blockScope.xi
+K 25
+svn:wc:ra_dav:version-url
+V 88
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/388/tests/valid_programs/blockScope.xi
+END
+kmp.xi
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/390/tests/valid_programs/kmp.xi
+END
+ifgood2.xi
+K 25
+svn:wc:ra_dav:version-url
+V 85
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/388/tests/valid_programs/ifgood2.xi
+END
+loop1.xi
+K 25
+svn:wc:ra_dav:version-url
+V 83
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/388/tests/valid_programs/loop1.xi
+END
+binsearch.xi
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/545/tests/valid_programs/binsearch.xi
+END
+ack.xi
+K 25
+svn:wc:ra_dav:version-url
+V 81
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/390/tests/valid_programs/ack.xi
+END
+array1.xi
+K 25
+svn:wc:ra_dav:version-url
+V 84
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/388/tests/valid_programs/array1.xi
+END

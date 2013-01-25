@@ -1,0 +1,97 @@
+package rak248.xi.ir;
+
+import java.util.ArrayList;
+
+import rak248.asm.AddressingMode;
+import rak248.asm.TempTable;
+import rak248.asm.Tile;
+import rak248.xi.SyntaxIR;
+
+public class MoveIR extends StatementIR {
+
+	public MoveIR(ExpressionIR e1, SyntaxIR e2) {
+		addChild(e1);
+		addChild(e2);
+		setLabel("MOVE");
+	}
+	
+	public SyntaxIR foldESEQ() {
+		SyntaxIR child1 = ((SyntaxIR) getChildren().get(0)).foldESEQ();
+		SyntaxIR child2 = ((SyntaxIR) getChildren().get(1)).foldESEQ();
+		getChildren().set(0, child1);
+		getChildren().set(1, child2);
+		SeqIR ret = new SeqIR();
+		if(!(child1 instanceof EseqIR) && !(child2 instanceof EseqIR)) {
+			return this;
+		} else if(child1 instanceof EseqIR && !(child2 instanceof EseqIR)) {
+			ret.addChild(((EseqIR) child1).getS());
+			ret.addChild(new MoveIR(((EseqIR) child1).getE(), (ExpressionIR) child2));
+		} else if(!(child1 instanceof EseqIR) && (child2 instanceof EseqIR)) {
+			//TempIR temp = new TempIR("OP_temp" + SyntaxIR.getFreshLabel());
+			//MoveIR move = new MoveIR(temp, (ExpressionIR) child1);
+			MoveIR opir = new MoveIR((ExpressionIR) child1, ((EseqIR) child2).getE());
+			//ret.addChild(move);
+			ret.addChild(((EseqIR) child2).getS());
+			ret.addChild(opir);
+		} else {
+			ret.addChild(((EseqIR) child1).getS());
+			//TempIR temp = new TempIR("OP_temp" + getFreshLabel());
+			//MoveIR move1 = new MoveIR(temp, ((EseqIR) child1).getE());
+			//ret.addChild(move1);
+			ret.addChild(((EseqIR) child2).getS());
+			MoveIR opir = new MoveIR((ExpressionIR) child1, ((EseqIR) child2).getE());
+			ret.addChild(opir);
+		}
+		return ret;
+	}
+	
+	public ArrayList<Tile> generateTile(TempTable tTable) {
+		SyntaxIR left = ((SyntaxIR) getChildren().get(0));
+		SyntaxIR right = ((SyntaxIR) getChildren().get(1));
+		ArrayList<Tile> rightTile = right.generateTile(tTable);
+		ArrayList<Tile> resultant = new ArrayList<Tile>();
+		resultant.addAll(rightTile);
+		Tile t1 = new Tile();
+		Tile t2 = new Tile();
+		t1.setScore(1);
+		t2.setScore(1);
+		t1.setOpCode("pop");
+		t1.setSrcAddrMode(new AddressingMode("r13"));
+		if(left instanceof TempIR) {
+			if(tTable.lookup((TempIR) left) == null) {
+				tTable.add((TempIR) left, 8);
+				//t3 = new Tile(1, "push", new AddressingMode("r13"), null);
+				//tTable.pushCalled();
+				//System.out.println(tTable);
+				//resultant.add(t3);
+			} else{
+				t2.setOpCode("movq");
+				t2.setSrcAddrMode(new AddressingMode("r13"));
+				Tile t3 = null;
+				tTable.popCalled();
+				t2.setDestAddrMode(new AddressingMode(tTable.lookup((TempIR) left), "rsp"));
+				resultant.add(t1);
+				resultant.add(t2);
+			}
+		}
+		// left is a MemIR
+		else {
+			tTable.popCalled();
+			ArrayList<Tile> leftTile = left.generateTile(tTable);
+			//System.out.println("left:"+left);
+			resultant.addAll(leftTile);
+			Tile t3 = new Tile();
+			t3.setScore(1);
+			t2.setOpCode("popq");
+			tTable.popCalled();
+			t2.setSrcAddrMode(new AddressingMode("r12"));
+			t3.setOpCode("movq");
+			t3.setSrcAddrMode(new AddressingMode("r13"));
+			t3.setDestAddrMode(new AddressingMode(true, "r12"));
+			resultant.add(t1);
+			resultant.add(t2);
+			resultant.add(t3);
+		}
+		return resultant;
+	}
+}

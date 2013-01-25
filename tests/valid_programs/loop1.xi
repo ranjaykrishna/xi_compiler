@@ -1,0 +1,1 @@
+main() : int {  func()  return 0;}func() {  m:bool = true  if(m)    x:int = 3  x = x + 4}

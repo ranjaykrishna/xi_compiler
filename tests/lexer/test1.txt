@@ -1,0 +1,5 @@
+// Return the greatest common divisor of two integers
+func(a:int):int {
+	b:int = a
+	return(b)
+}

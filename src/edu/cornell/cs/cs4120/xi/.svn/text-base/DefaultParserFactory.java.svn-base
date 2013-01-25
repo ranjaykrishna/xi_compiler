@@ -1,0 +1,15 @@
+package rak248.testing;
+
+import java.io.Reader;
+
+import rak248.xi.parser.Parser;
+
+
+/**
+ * A worthless default {@link ParserFactory} implementation.
+ */
+public class DefaultParserFactory implements ParserFactory {
+  public Parser newParser(Reader reader) {
+    throw new UnsupportedOperationException();
+  }
+}

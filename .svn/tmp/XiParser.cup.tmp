@@ -1,0 +1,428 @@
+package rak248.xi.parser;
+
+import java_cup.runtime.*;
+import rak248.xi.lexer.*;
+import rak248.xi.SyntaxNode;
+import rak248.xi.typeChecker.Type;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.FileReader;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+
+scan with {: return ((JFlexLexer)getScanner()).next(); :}
+
+parser code  {: 
+ 
+  public void report_error(String message, Object info) {
+    StringBuffer m = new StringBuffer("Syntax error ");
+
+    if (info instanceof XiSymbol){
+      XiSymbol x = (XiSymbol)info;
+      m.append( "on line " + x.position().lineStart() );
+      m.append( " at token " + x.value() + "\n");
+      try{
+        BufferedReader br = new BufferedReader(new FileReader(x.position().unit()));
+        String line = "could not read";
+        for(int i=0;i<x.position().lineStart();i++){
+          line = br.readLine();
+        }
+        m.append("  ");
+        for(int i=0;i<x.position().columnStart()-1;i++){
+          m.append(" ");
+      }
+      m.append("v\n");
+      m.append("  " + line.replace('\t',' ') + "\n");
+      }catch (FileNotFoundException f){
+        System.err.println("Unable to find file"+x.position().unit());
+      }catch (IOException i){
+        System.err.println("Unable to read file"+x.position().unit());
+      }
+    }
+    //m.append(" : "+message);
+
+    System.out.println(m);
+  }
+
+  public void report_fatal_error(String message, Object info) {
+    report_error(message, info);
+    //throw new RuntimeException("Fatal Syntax Error");
+  }
+
+
+:};
+
+terminal XiSymbol AND;//    &
+terminal XiSymbol BOOL;//            bool
+terminal XiSymbol BREAK;//           break
+terminal XiSymbol CLOSE_BRACE;//     }
+terminal XiSymbol CLOSE_BRACKET;//   ]
+terminal XiSymbol CLOSE_PAREN;//     )
+terminal XiSymbol COLON;//           :
+terminal XiSymbol COMMA;//           ,
+terminal XiSymbol DIVIDE;// /
+terminal XiSymbol ELSE;//            else
+terminal XiSymbol EQUAL;//  ==
+terminal XiSymbol FALSE;//           false
+terminal XiSymbol GEQ;//    >=
+terminal XiSymbol GETS;//            =
+terminal XiSymbol GT;//     >
+terminal XiSymbol IF;//              if
+terminal XiSymbol INT;//             int
+terminal XiSymbol LENGTH;//          length
+terminal XiSymbol LEQ;//    <=
+terminal XiSymbol LT;//     <
+terminal XiSymbol MINUS;//  -
+terminal XiSymbol MODULO;// %
+terminal XiSymbol NOT;//             !
+terminal XiSymbol NOT_EQUAL;//       !=
+terminal XiSymbol OPEN_BRACE;//      {
+terminal XiSymbol OPEN_BRACKET;//    [
+terminal XiSymbol OPEN_PAREN;//      (
+terminal XiSymbol OR;//     |
+terminal XiSymbol PLUS;//   +
+terminal XiSymbol RETURN;//          return
+terminal XiSymbol SEMICOLON;//       ;
+terminal XiSymbol TIMES;//  *
+terminal XiSymbol TRUE;//            true
+terminal XiSymbol UNDERSCORE;//      _
+terminal XiSymbol USE;//             use
+terminal XiSymbol WHILE;//           while
+
+terminal XiSymbol INTEGER_LITERAL;
+terminal XiSymbol CHAR_LITERAL;
+terminal XiSymbol STRING_LITERAL;
+terminal XiSymbol IDENTIFIER; // name
+
+terminal XiSymbol CLASS;			//OO Xi terminals
+terminal XiSymbol EXTENDS;
+terminal XiSymbol NEW;
+terminal XiSymbol THIS;
+terminal XiSymbol PERIOD;
+
+non terminal BodyNode                                      body;
+non terminal ClassNode                                     class;
+non terminal ClassBodyNode                                 class_body;
+non terminal ExtendsNode                                   extends_opt;
+non terminal DeclarationNode                               field;
+non terminal ArrayList<String>                             identifiers;
+non terminal AccessorNode                                  accessor;
+	
+non terminal CompUnitNode                                  goal;
+non terminal CompUnitNode                                  compilation_unit;
+non terminal UseNode                                       use_opt;
+non terminal FunctionsNode                                 functions;
+non terminal FunctionDecNode                               function;
+non terminal FunctionDecNode                               procedure;
+non terminal LinkedHashMap<String,Type>                    parameters;
+non terminal ArrayList<Type>                               return_type;
+non terminal Type                                          type;
+non terminal Type                                          primitive_type;
+non terminal Type                                          array;
+non terminal ArrayList<ExpressionNode>                     brackets;
+non terminal ArrayList<ExpressionNode>                     non_empty_brackets;
+non terminal ArrayList<ExpressionNode>                     empty_brackets;
+non terminal StatementsNode                                statements;
+non terminal StatementNode                                 statement;
+non terminal DeclarationNode                               declarations;
+non terminal ReturnNode                                    return_opt;
+non terminal AssignmentNode                                assignments;
+non terminal LHSListNode                                   assign_lhs;
+non terminal LHSListNode                                   left_hand_side;
+non terminal ConditionNode                                 conditionals;
+non terminal StatementNode                                 conditional_run;
+non terminal WhileNode                                     loops;
+non terminal StatementNode                                loop_body;
+non terminal SyntaxNode                                    literal;
+non terminal XiSymbol                                      boolean_literal;
+non terminal ProcedureCallNode                             procedure_call;
+non terminal ArrayList<ExpressionNode>                     expression_list;
+non terminal ExpressionNode                                expression;
+non terminal                                               semicolon_opt;
+non terminal SyntaxNode                                    fil;
+non terminal ArrayLookUpNode                               array_lookup;
+non terminal ArrayList<ExpressionNode>                     bracket_index;
+non terminal StatementNode                                 conditional_run_matched;
+non terminal ConditionNode                                 matched;
+non terminal ConditionNode                                 unmatched;
+non terminal LinkedHashMap<String,Type>                    parameters_paren;
+non terminal ExpressionNode                                expression_paren;
+non terminal NotNode                                       not_opt;
+non terminal MinusNode                                     minus_opt;
+non terminal SyntaxNode                                    unary;
+non terminal Type                                          parameter_type;
+non terminal Integer                                       parameter_brackets;
+non terminal FunctionCallNode                              function_call;
+non terminal ExpressionNode                                binop;
+non terminal ArrayList<ExpressionNode>                     bracket_index_opt;
+non terminal                                               comma_opt;
+
+precedence left OR;
+precedence left AND;
+precedence left EQUAL, NOT_EQUAL;
+precedence left LT, LEQ, GEQ, GT;
+precedence left PLUS, MINUS;
+precedence left TIMES, DIVIDE, MODULO;
+precedence nonassoc NOT;
+precedence nonassoc IDENTIFIER;
+precedence left CHAR_LITERAL, STRING_LITERAL, INTEGER_LITERAL;
+
+start with goal;
+
+// The Syntactic Grammar
+goal ::= compilation_unit:c 							{: RESULT = c; :} ;
+
+compilation_unit ::= use_opt:u body:fs 			{: RESULT = new CompUnitNode(u,fs,u.position(),fs.position()); :};
+
+body ::= body:cf functions:f  {: cf.add(f); RESULT = cf; :}
+      |  body:cf class:c      {: cf.add(c); RESULT = cf; :}
+	  |  functions:f          {: RESULT = new BodyNode(f); :}
+	  |  class:c              {: RESULT = new BodyNode(c); :};
+	  
+class ::= CLASS:cl IDENTIFIER:name extends_opt:ext OPEN_BRACE class_body:b CLOSE_BRACE:c 
+          {: RESULT = new ClassNode(name.value(), ext,b, cl.position(), c.position()); :};
+		  
+extends_opt ::= EXTENDS:ext identifiers:d {: RESULT = new ExtendsNode(d,ext.position()); :}
+             |                            {: RESULT = new ExtendsNode(); :};   
+			 
+identifiers ::= identifiers:i COMMA IDENTIFIER:id  {: i.add(id.value()); RESULT = i; :}
+             |  IDENTIFIER:id                      {: ArrayList<String> i = new ArrayList<String>(); i.add(id.value()); RESULT = i; :};			 
+			 
+class_body ::= class_body:cb functions:f {: cb.add(f); RESULT = cb; :}
+            |  class_body:cb field:f     {: cb.add(f); RESULT = cb; :}
+			|  field:f                   {: ClassBodyNode cb = new ClassBodyNode(); cb.add(f); RESULT = cb; :}
+			|  functions:f               {: ClassBodyNode cb = new ClassBodyNode(); cb.add(f); RESULT = cb; :};
+
+field ::= identifiers:id COLON type:t {: RESULT = new DeclarationNode(id,t); :};		
+
+use_opt ::= use_opt:u USE:useT IDENTIFIER:id semicolon_opt		{: RESULT = u.addUse(id.value(),u.position(),useT.position(),id.position()); :}
+          | 											        {: RESULT = new UseNode(); :};
+
+functions ::= function:f 									{: RESULT = new FunctionsNode(f,f.position(),f.position()); :}
+		   |  procedure:f 									{: RESULT = new FunctionsNode(f,f.position(),f.position()); :};
+
+function ::= IDENTIFIER:id parameters_paren:p return_type:r OPEN_BRACE statements:s return_opt:ro CLOSE_BRACE:c
+	       {: RESULT = new FunctionDecNode(id.value(),p,r,s,ro,id.position(),c.position()); :}
+	   | IDENTIFIER:id parameters_paren:p return_type:r OPEN_BRACE statements:s CLOSE_BRACE:c 
+	       {: RESULT = new FunctionDecNode(id.value(),p,r,s,null,id.position(),c.position()); :};
+														
+procedure ::= IDENTIFIER:id parameters_paren:p OPEN_BRACE statements:s CLOSE_BRACE:c 
+                {: RESULT = new FunctionDecNode(id.value(),p,new ArrayList<Type>(),s,null,id.position(),c.position()); :}
+	      | IDENTIFIER:id parameters_paren:p OPEN_BRACE statements:s return_opt:r CLOSE_BRACE:c
+	        {: RESULT = new FunctionDecNode(id.value(),p,new ArrayList<Type>(),s,r,id.position(),c.position()); :};
+
+parameters_paren ::= OPEN_PAREN parameters:p CLOSE_PAREN {: RESULT = p; :};
+
+parameters ::= IDENTIFIER:id COLON parameter_type:t 	{: LinkedHashMap<String,Type> mappi = new LinkedHashMap<String,Type>(); mappi.put(id.value(),t); RESULT = mappi; :}
+             | parameters:p COMMA IDENTIFIER:id COLON parameter_type:t {: p.put(id.value(),t); RESULT = p; :}
+             | 											{: RESULT = new LinkedHashMap<String,Type>(); :};
+
+return_type ::= COLON parameter_type:t 					{: ArrayList<Type> ar = new ArrayList<Type>(); ar.add(t); RESULT = ar; :}
+              | return_type:rt COMMA parameter_type:t   {: rt.add(t); RESULT = rt; :};
+
+parameter_type ::= primitive_type:t {: RESULT = t; :}
+				| primitive_type:t parameter_brackets:b 
+					{: switch (t.type) { 
+						case INT: RESULT = new Type(Type.typeEnum.INT_ARRAY,b); break;
+						case BOOL: RESULT = new Type(Type.typeEnum.BOOL_ARRAY,b); break; 
+						} :};
+
+parameter_brackets ::= OPEN_BRACKET CLOSE_BRACKET {: RESULT = 1; :}
+           | parameter_brackets:b OPEN_BRACKET CLOSE_BRACKET {: RESULT = b + 1; :};
+		   
+type ::= primitive_type:t {: RESULT = t; :}
+       | array:a {: RESULT = a; :};
+
+primitive_type ::= INT {: RESULT = new Type(Type.typeEnum.INT); :} 
+                 | BOOL {: RESULT = new Type(Type.typeEnum.BOOL); :}
+		 | IDENTIFIER {: RESULT = new Type(Type.typeEnum.ABSTRACT); :};
+
+array ::= primitive_type:t brackets:b {: switch (t.type) { 
+						case INT: RESULT = new Type(Type.typeEnum.INT_ARRAY,b); break;
+						case BOOL: RESULT = new Type(Type.typeEnum.BOOL_ARRAY,b); break; 
+						} :};
+		   
+brackets ::= non_empty_brackets:nb empty_brackets:b  {: nb.addAll(b); RESULT = nb; :} 
+           | non_empty_brackets:nb  {: RESULT = nb; :}
+		   | empty_brackets:b       {: RESULT = b; :};
+		   
+empty_brackets ::= OPEN_BRACKET:o CLOSE_BRACKET:c {: ArrayList<ExpressionNode> ar = new ArrayList<ExpressionNode>();
+                                                     ar.add(new IntegerLiteralNode(0,o.position(),c.position()));
+													 RESULT = ar; :}
+				|  empty_brackets:eb OPEN_BRACKET:o CLOSE_BRACKET:c {: eb.add(new IntegerLiteralNode(0,o.position(),c.position())); RESULT = eb; :};
+		   
+non_empty_brackets ::= non_empty_brackets:b OPEN_BRACKET expression:e CLOSE_BRACKET {: b.add(e); RESULT = b; :}
+					| OPEN_BRACKET expression:e CLOSE_BRACKET 
+							{: ArrayList<ExpressionNode>  ar = new ArrayList<ExpressionNode>(); 
+							   ar.add(e);
+							   RESULT = ar; :};
+		
+statements ::= statements:s statement:c                  			{: RESULT = s.addStatement(c,s.position(),c.position()); :}
+             | 			     										{: RESULT = new StatementsNode(); :}; 
+			 
+statement ::= declarations:c semicolon_opt                          {: RESULT = c; :}
+            | procedure_call:c semicolon_opt                        {: RESULT = c; :}
+			| assignments:c semicolon_opt                           {: RESULT = c; :}
+			| conditionals:c                                        {: RESULT = c; :}
+			| loops:c                                               {: RESULT = c; :}
+			| OPEN_BRACE:o statements:c CLOSE_BRACE:cl	{: StatementsNode sn = new StatementsNode(); 
+									   if(c.position()==null){
+									     sn.addStatement(c,o.position(),cl.position()); RESULT = sn; 
+									   }else{
+									     sn.addStatement(c,o.position(),c.position()); RESULT = sn; 
+									   }:}
+			| OPEN_BRACE RETURN:r expression_list:e semicolon_opt CLOSE_BRACE{: if (e == null) {
+			                                                                      RESULT = new ReturnNode(new ArrayList<ExpressionNode>(),r.position(),r.position());
+																		     } else{
+																			      RESULT = new ReturnNode(e,r.position(),r.position());
+																			 }	  :}; 
+				
+declarations ::= IDENTIFIER:id COLON:c type:t 						{: RESULT = new DeclarationNode(id.value(),t,id.position(),c.position()); :};
+
+return_opt ::= RETURN:r expression_list:e semicolon_opt 		{: if(e.size()==0){
+                                                                             RESULT = new ReturnNode(e,r.position(),r.position());
+									   }else{
+									     RESULT = new ReturnNode(e,e.get(0).position(),e.get(e.size()-1).position());
+									   } :};
+
+assignments ::= left_hand_side:a expression:e 							{: RESULT = new AssignmentNode(a,e,a.position(),e.position()); :};
+
+left_hand_side ::= assign_lhs:a GETS {: RESULT = a; :};
+
+assign_lhs ::= IDENTIFIER:id COLON type:t       					{: RESULT = new LHSListNode(id.value(),t,id.position(),id.position()); :}
+             | UNDERSCORE:u      									{: RESULT = new LHSListNode(u.position(),u.position()); :}
+	         | IDENTIFIER:id     									{: RESULT = new LHSListNode(id.value(),id.position(),id.position()); :}
+             | assign_lhs:a COMMA IDENTIFIER:id COLON type:t   	    {: RESULT = a.addLHS(id.value(),t,a.position(),id.position()); :}
+             | assign_lhs:a COMMA UNDERSCORE:u     					{: RESULT = a.addLHS(a.position(),u.position()); :}
+             | assign_lhs:a COMMA IDENTIFIER:id     				{: RESULT = a.addLHS(id.value(),a.position(),id.position()); :}
+			 | array_lookup:a   									{: RESULT = new LHSListNode(a,a.position(),a.position()); :}
+			 | assign_lhs:a COMMA array_lookup:b        			{: RESULT = a.addLHS(b,a.position(),b.position()); :} ;
+
+conditionals ::= matched:m 											{:RESULT = m; :}
+			   | unmatched:m 										{: RESULT = m; :};
+
+unmatched ::= IF expression_paren:e conditional_run:c {: RESULT = new ConditionNode(e,c,e.position(),c.position()); :};
+
+matched ::=  IF expression_paren:e conditional_run_matched:c ELSE conditional_run_matched:cl {: RESULT = new ConditionNode(e,c,cl,e.position(),cl.position()); :};
+
+conditional_run ::= OPEN_BRACE:o statements:s BREAK:b semicolon_opt CLOSE_BRACE:c {: RESULT = s.addStatement(new BreakNode(b.position(),b.position()),o.position(),c.position()); :}
+                  | OPEN_BRACE statements:s return_opt:r CLOSE_BRACE:c 	  {: s.addReturn(r,r.position(),r.position()); RESULT = s; :}
+                  | OPEN_BRACE:o statements:s CLOSE_BRACE:c 	          {: if(s.position()==null){
+		                                                               s.setPosition(o.position());
+									     } RESULT = s; :}
+		          | BREAK:b semicolon_opt                                 {: RESULT = new BreakNode(b.position(),b.position()); :}
+                  | declarations:s semicolon_opt 			  {: RESULT = s; :}
+                  | procedure_call:s semicolon_opt 			  {: RESULT = s; :}
+                  | assignments:s semicolon_opt 			  {: RESULT = s; :}
+				  | loops:s                                   {: RESULT = s; :}
+                  | conditionals:s 							  {: RESULT = s; :} ;
+
+conditional_run_matched ::= OPEN_BRACE:o statements:s BREAK:b semicolon_opt CLOSE_BRACE:c 	{: RESULT = s.addStatement(new BreakNode(b.position(),b.position()),o.position(),c.position()); :}
+                          | OPEN_BRACE statements:s return_opt:r CLOSE_BRACE:c 		{: s.addReturn(r,r.position(),r.position()); RESULT = s; :}
+                          | OPEN_BRACE:o statements:s CLOSE_BRACE:c 		        {: if(s.position()==null){
+		                                                                             s.setPosition(o.position());
+									                   } RESULT = s; :}
+		                  | BREAK:b semicolon_opt                                       {: RESULT = new BreakNode(b.position(),b.position()); :}
+                          | declarations:s semicolon_opt 				{: RESULT = s; :}
+                          | procedure_call:s semicolon_opt 				{: RESULT = s; :}
+                          | assignments:s semicolon_opt					{: RESULT = s; :}
+						  | loops:s                                     {: RESULT = s; :}
+                          | matched:s 									{: RESULT = s; :};
+
+
+
+loops ::= WHILE:w expression_paren:args loop_body:b 	{:RESULT = new WhileNode(args,b,w.position(),b.position()); :};
+
+loop_body ::= OPEN_BRACE:o statements:s BREAK:b semicolon_opt CLOSE_BRACE:c 	{: RESULT = s.addStatement(new BreakNode(b.position(),b.position()),o.position(),c.position()); :}
+            | OPEN_BRACE statements:s return_opt:r CLOSE_BRACE:c	{: s.addReturn(r,r.position(),r.position()); RESULT = s; :}
+	        | OPEN_BRACE:o statements:s CLOSE_BRACE                       {: if(s.position()==null){
+		                                                             s.setPosition(o.position());
+									   } RESULT = s; :}
+            | BREAK:b semicolon_opt                                     {: RESULT = new BreakNode(b.position(),b.position()); :}
+            | declarations:s semicolon_opt 				{: RESULT = s; :}
+            | procedure_call:s semicolon_opt 				{: RESULT = s; :}
+            | matched:c                                        {: RESULT = c; :}
+            | loops:c                                               {: RESULT = c; :}
+            | assignments:s semicolon_opt					{: RESULT = s; :};
+
+literal ::= INTEGER_LITERAL:id 		{:RESULT = new IntegerLiteralNode(Integer.parseInt(id.value()),id.position(),id.position()); :}
+		  | CHAR_LITERAL:id 		{:RESULT = new CharLiteralNode(id.value(),id.position(),id.position()); :}
+		  | STRING_LITERAL:id 		{:RESULT = new StringLiteralNode(id.value(),id.position(),id.position()); :}
+          | boolean_literal:id 		{:RESULT = new BoolLiteralNode(id.value(),id.position(),id.position()); :};
+
+boolean_literal ::= TRUE:t	{: RESULT = new XiSymbol(Sym.TRUE,"true",t.position().lineStart(),t.position().columnStart(),t.position().columnEnd(),t.position().unit()); :}
+                  | FALSE:f	{: RESULT = new XiSymbol(Sym.FALSE,"false",f.position().lineStart(),f.position().columnStart(),f.position().columnEnd(),f.position().unit()); :};
+			
+expression_list ::= expression:e 					{: ArrayList<ExpressionNode> ar = new ArrayList<ExpressionNode>(); ar.add(e); e.setParFlag(true);RESULT = ar; :} 
+           | expression_list:el COMMA expression:e  {: el.add(e); e.setParFlag(true);RESULT = el; :}
+           |  										{: RESULT = new ArrayList<ExpressionNode>(); :};	   
+
+procedure_call ::= IDENTIFIER:id OPEN_PAREN expression_list:args CLOSE_PAREN:c   {:RESULT = new ProcedureCallNode(id.value(),args,id.position(),c.position()); :};
+				
+not_opt ::= NOT:n 			{: RESULT = new NotNode(n.position(),n.position()); :}
+		  | not_opt:n NOT 	{: RESULT = n.addNot(); :};
+
+minus_opt ::= MINUS:n               {: RESULT = new MinusNode(n.position(),n.position()); :}
+			| minus_opt:m MINUS    {: RESULT = m.addMinus(); :};
+			
+unary ::= not_opt:n     {: RESULT= n; :}
+        | minus_opt:n   {: RESULT= n; :};
+		  
+comma_opt ::= COMMA
+        | ;		  
+		  
+expression ::= unary:n fil:f 							{: RESULT = new ExpressionNode(n,f,n.position(),f.position()); :}
+            | NEW IDENTIFIER:obj OPEN_PAREN expression_list:e CLOSE_PAREN {: RESULT = new ObjectNode(obj.value(),e,obj.position()); :}
+			| fil:f 											{: RESULT = new ExpressionNode(f,f.position(),f.position()); :}
+            | binop:c                                     {: RESULT = c; :}
+			//| unary:u binop:c                                     {: RESULT = c; :}
+			| LENGTH:id OPEN_PAREN expression:arg CLOSE_PAREN	{: RESULT = new ExpressionNode("length",arg, id.position(),arg.position()); :};
+			
+binop ::= expression:e1 EQUAL:o expression:e2	{: RESULT = new ExpressionNode(e1, new ComparisonOperatorNode(Sym.EQUAL,o.position(),o.position()), e2,e1.position(),e2.position()); :}
+       |  expression:e1 GEQ:o expression:e2	    {: RESULT = new ExpressionNode(e1, new ComparisonOperatorNode(Sym.GEQ,o.position(),o.position()), e2,e1.position(),e2.position()); :}
+       |  expression:e1 GT:o expression:e2	    {: RESULT = new ExpressionNode(e1, new ComparisonOperatorNode(Sym.GT,o.position(),o.position()), e2,e1.position(),e2.position()); :}
+       |  expression:e1 LEQ:o expression:e2	    {: RESULT = new ExpressionNode(e1, new ComparisonOperatorNode(Sym.LEQ,o.position(),o.position()), e2,e1.position(),e2.position()); :}
+       |  expression:e1 LT:o expression:e2	        {: RESULT = new ExpressionNode(e1, new ComparisonOperatorNode(Sym.LT,o.position(),o.position()), e2,e1.position(),e2.position()); :}
+       |  expression:e1 NOT_EQUAL:o expression:e2	{: RESULT = new ExpressionNode(e1, new ComparisonOperatorNode(Sym.NOT_EQUAL,o.position(),o.position()), e2,e1.position(),e2.position()); :}
+       |  expression:e1 AND:o expression:e2	        {: RESULT = new ExpressionNode(e1, new ComparisonOperatorNode(Sym.AND,o.position(),o.position()), e2,e1.position(),e2.position()); :}
+       |  expression:e1 OR:o expression:e2	        {: RESULT = new ExpressionNode(e1, new ComparisonOperatorNode(Sym.OR,o.position(),o.position()), e2,e1.position(),e2.position()); :}
+       |  expression:e1 MINUS:m expression:e2		{: RESULT = new ExpressionNode(e1, new MathFunctionNode(Sym.MINUS,m.position(),m.position()), e2,e1.position(),e2.position());:}
+	   |  expression:e1 MODULO:m expression:e2		{: RESULT = new ExpressionNode(e1, new MathFunctionNode(Sym.MODULO,m.position(),m.position()), e2,e1.position(),e2.position());:}
+	   |  expression:e1 PLUS:m expression:e2		{: RESULT = new ExpressionNode(e1, new MathFunctionNode(Sym.PLUS,m.position(),m.position()), e2,e1.position(),e2.position());:}
+	   |  expression:e1 TIMES:m expression:e2		{: RESULT = new ExpressionNode(e1, new MathFunctionNode(Sym.TIMES,m.position(),m.position()), e2,e1.position(),e2.position());:}
+	   |  expression:e1 DIVIDE:m expression:e2		{: RESULT = new ExpressionNode(e1, new MathFunctionNode(Sym.DIVIDE,m.position(),m.position()), e2,e1.position(),e2.position());:};
+
+expression_paren ::= OPEN_PAREN expression:e CLOSE_PAREN 		{:RESULT = e; RESULT.setParFlag(true);:};
+
+fil ::= array_lookup:p 	                            {: RESULT = p; :}
+      | IDENTIFIER:p 	                            {: RESULT = new VarNode(p.value(),p.position(),p.position()); :}
+	  | THIS:p                                      {: RESULT = new ThisNode(p.position()); :}
+	  | THIS:p PERIOD accessor:a                    {: a.addInFrront(new ThisNode()); RESULT = a; :}
+	  | IDENTIFIER:id PERIOD accessor:a             {: a.addInFront(new VarNode(id.value()),id.position().id.position()); RESULT = a; :}
+	  | function_call:id PERIOD accessor:a          {: a.addInFront(id); RESULT = a; :}
+      | literal:p 		                            {: RESULT = p; :}
+	  | function_call:p                             {: RESULT = p; :} 
+	  | OPEN_PAREN:f expression_list:e comma_opt CLOSE_PAREN:l  bracket_index_opt:b    {: RESULT = new ExpressionNode(e,b,f.position(),l.position()); ((ExpressionNode)RESULT).setParFlag(true);:};
+
+accessor ::= accessor:a PERIOD IDENTIFIER:id {: a.add(new VarNode(id.value(),id.position(),id.position())); RESULT = a; :}
+          |  accessor:a PERIOD function_call:f {:a.add(f); RESULT = a; :} 
+          | IDENTIFIER:id {: AccessorNode a = new AccessorNode(); a.add(new VarNode(id.value(),id.position(),id.position())); RESULT = a; :}
+		  | function_call:f {: AccessorNode a = new AccessorNode(); a.add(f); RESULT = a; :};
+
+	  
+function_call ::= IDENTIFIER:id OPEN_PAREN expression_list:args CLOSE_PAREN:c  {:RESULT = new FunctionCallNode(id.value(),args,id.position(),c.position()); :};	  
+
+semicolon_opt ::= SEMICOLON
+                | ;
+				
+array_lookup ::= IDENTIFIER:id bracket_index:i {:RESULT = new ArrayLookUpNode(id.value(),i,id.position(),i.get(0).position()); :}
+			   | function_call:func bracket_index:i {:RESULT = new ArrayLookUpNode(func,i,func.position(),i.get(0).position()); :};
+
+bracket_index ::= bracket_index:b OPEN_BRACKET expression:e CLOSE_BRACKET	{: b.add(e); RESULT = b; :}
+                | OPEN_BRACKET expression:e CLOSE_BRACKET 					{: ArrayList<ExpressionNode> ar = new ArrayList<ExpressionNode>(); 
+																				ar.add(e);
+																				RESULT = ar; :};
+bracket_index_opt ::= bracket_index:c {: RESULT = c; :}
+				   |  {: RESULT = null; :} ;
+				   

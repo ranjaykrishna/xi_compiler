@@ -1,0 +1,101 @@
+K 25
+svn:wc:ra_dav:version-url
+V 67
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/794/tests/IRtests
+END
+simpleProcedure.xi
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/622/tests/IRtests/simpleProcedure.xi
+END
+trueConditional.xi
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/522/tests/IRtests/trueConditional.xi
+END
+factorial.xi
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/531/tests/IRtests/factorial.xi
+END
+multifunc.xi
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/531/tests/IRtests/multifunc.xi
+END
+while.xi
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/522/tests/IRtests/while.xi
+END
+fibonacci.xi
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/596/tests/IRtests/fibonacci.xi
+END
+falseConditional.xi
+K 25
+svn:wc:ra_dav:version-url
+V 87
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/522/tests/IRtests/falseConditional.xi
+END
+array.xi
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/528/tests/IRtests/array.xi
+END
+basic.xi
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/522/tests/IRtests/basic.xi
+END
+multiDim.xi
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/748/tests/IRtests/multiDim.xi
+END
+factorial.s
+K 25
+svn:wc:ra_dav:version-url
+V 79
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/794/tests/IRtests/factorial.s
+END
+const.xi
+K 25
+svn:wc:ra_dav:version-url
+V 76
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/522/tests/IRtests/const.xi
+END
+simpleMem.xi
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/560/tests/IRtests/simpleMem.xi
+END
+func.xi
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/582/tests/IRtests/func.xi
+END
+halfConditional.xi
+K 25
+svn:wc:ra_dav:version-url
+V 86
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/539/tests/IRtests/halfConditional.xi
+END
+inputTest.xi
+K 25
+svn:wc:ra_dav:version-url
+V 80
+/svn/repos/compilers4120_fall2011_group1/!svn/ver/560/tests/IRtests/inputTest.xi
+END

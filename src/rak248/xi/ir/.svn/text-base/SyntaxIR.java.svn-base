@@ -1,0 +1,27 @@
+package rak248.edu.cornell.cs.cs4120.xi.ir;
+
+import java.util.ArrayList;
+
+import rak248.edu.cornell.cs.cs4120.xi.SyntaxNode;
+
+public class IRNode {
+	ArrayList<IRNode> children = new ArrayList<IRNode>();
+	
+	public void convertToIR(SyntaxNode sn){
+		
+	}
+	
+	public String toString(){
+		String ret ="[";
+		for (IRNode node : children){
+			ret += node.toString() + ", ";
+		}
+		if (children.size() == 0){
+			ret = ret.substring(0,ret.length()-2) + "]";
+		}
+		else{
+			ret += "]";
+		}
+		return ret;
+	}
+}

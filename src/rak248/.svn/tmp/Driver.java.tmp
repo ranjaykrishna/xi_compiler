@@ -1,0 +1,119 @@
+package rak248;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.OutputStreamWriter;
+
+import edu.cornell.cs.cs4120.util.CodeWriterTreePrinter;
+import edu.cornell.cs.cs4120.xi.AbstractSyntaxNode;
+
+import rak248.asm.TempTable;
+import rak248.asm.Tile;
+import rak248.testing.InputInterpreter;
+import rak248.testing.Interpreter;
+import rak248.testing.LowIRInterpreter;
+import rak248.testing.XiParserFactory;
+import rak248.util.*;
+import rak248.xi.SyntaxIR;
+import rak248.xi.ir.Optimize;
+import rak248.xi.ir.SeqIR;
+import rak248.xi.parser.CompUnitNode;
+import rak248.xi.parser.XiParser;
+import rak248.xi.typeChecker.SymbolTableCreator;
+
+public class Driver {
+
+	/**
+	 * @param args
+	 * @throws Exception 
+	 * @throws Exception 
+	 */
+	public static void main(String[] args){
+		try{
+		if (args.length == 0){
+			printHelp();
+		}
+		else if (args.length == 1){
+			String source = args[0];
+			helper(false,"--dump_ast",source);
+		}
+		else if (args.length == 3){
+			String source = args[2];
+			if (args[1].equals("-o")){			
+				helper(false,args[0],source);
+			}
+			else if (args[0].equals("-o")) {
+				helper(false,args[1],source);
+			}
+			else{
+				printHelp();
+			}
+		}
+		else{
+			String source = args[1];
+			String tree = args[0];
+			helper(true, tree, source);
+		}
+		}
+		catch (Exception e){
+			e.printStackTrace();
+		}
+	}
+	
+	public static void printHelp(){
+		System.out.println("Incorrect inputs.");
+		System.out.println("Add -o to remove optimizations.");
+		System.out.println("Add --dump_ast to output an abstract syntax tree.");
+		System.out.println("Add --dump_ir to output the intermediate representation.");
+		System.out.println("Make sure to add the source xi file.");
+	}
+	
+	public static void helper(boolean optimize, String tree, String source) throws Exception{
+		FileReader file = new FileReader(source);
+		BufferedReader bf = new BufferedReader(file);
+		XiParser parser_obj = (XiParser) (new XiParserFactory()).newParser(bf);
+		AbstractSyntaxNode parseTree = null;
+		parseTree = parser_obj.parse();
+		CompUnitNode comp = (CompUnitNode) parseTree;
+		SymbolTableCreator stc = new SymbolTableCreator();
+		if (stc.interfaceCheck(source.substring(0,source.length()-3),comp)){
+			if (tree.equals("--dump_ast")){
+				CodeWriterTreePrinter printer = new CodeWriterTreePrinter(System.out);
+				printer.print(comp);
+			}		
+			else if (tree.equals("--dump_ir")){
+				if (!optimize){
+					SyntaxIR seq = comp.translate();
+					CodeWriterIRPrinter printer = new CodeWriterIRPrinter(System.out);
+					printer.print(seq);
+				}
+				else{
+					//optimizations
+					SyntaxIR seq = comp.translate(null);
+					seq = seq.foldESEQ();
+					Optimize.foldConst(seq);
+					Optimize.foldSEQ(seq);
+					Optimize.foldCJump(seq);
+					CompactPrinter printer = new CompactPrinter(new OutputStreamWriter(System.out));
+					printer.print(seq);
+					
+					//UnComment the following two lines to run the interpreter
+					int[][] s = new int[2][2];
+					s[1][1] = 34;
+					s[1][0] = 2;
+					s[0][0] = 0;
+					s[0][1] = 1;
+					InputInterpreter lir = new InputInterpreter(seq);
+					lir.runProgram(s);
+					TempTable tTable = new TempTable();
+					for(Tile tile : seq.generateTile(tTable)) {
+						System.out.println(tile);
+					}
+					//There are a lot of print statements 
+				}
+			}else{
+				System.out.println("You dun goofed");
+				printHelp();
+			}
+		}
+	}
+}

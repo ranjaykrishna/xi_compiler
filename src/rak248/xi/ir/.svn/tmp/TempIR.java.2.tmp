@@ -1,0 +1,82 @@
+package rak248.xi.ir;
+
+import java.util.ArrayList;
+
+import rak248.asm.AddressingMode;
+import rak248.asm.TempTable;
+import rak248.asm.Tile;
+import rak248.xi.SyntaxIR;
+
+public class TempIR extends ExpressionIR{
+	
+	private String id;
+	
+	public TempIR(String actual,String id) {
+		setLabel("TEMP: "+ actual);
+		this.id = id;
+	}
+	
+	public TempIR() {
+		setLabel("STATIC TEMP: " );//+ getFreshName());
+	}
+	
+	//used for hidden temps (setting up lists)
+	public TempIR(String id) {
+		setLabel("HIDDEN TEMP: " + id);
+		this.id = id;
+	}
+	
+	public SyntaxIR foldESEQ() {
+		return this;
+	}
+	
+	public SyntaxIR foldCALL(){
+		return this;
+	}
+	
+	public int hashCode(){
+		return id.hashCode();
+	}
+	
+	public String getId(){
+		return id;
+	}
+	
+	public ArrayList<Tile> generateTile(TempTable tTable) {
+		Tile t1 = new Tile();
+		Tile t2 = new Tile();
+		t1.setScore(1);
+		t2.setScore(1);
+		//t1.setOpCode("movq " + offset + "(RSP), R8");
+		//t2.setOpCode("pushq R8");
+		t1.setOpCode("movq");
+		System.out.println("tempid: " + id);
+		System.out.println("table: " + tTable);
+		if(id.equals("_args0")) {
+			t1.setSrcAddrMode(new AddressingMode("rdi")); }
+		else if(id.equals("_args1")) {
+			t1.setSrcAddrMode(new AddressingMode("rsi")); }
+		else if(id.equals("_args2")) {
+			t1.setSrcAddrMode(new AddressingMode("rdx")); }
+		else if(id.equals("_args3")) {
+			t1.setSrcAddrMode(new AddressingMode("rcx")); }
+		else if(id.equals("_args4")) {
+			t1.setSrcAddrMode(new AddressingMode("r8")); }
+		else if(id.equals("_args5")) {
+			t1.setSrcAddrMode(new AddressingMode("r9")); }
+		else if(id.startsWith("_")) {
+			t1.setSrcAddrMode(new AddressingMode((Integer.parseInt(id.substring(5,6)) - 3) * 8, "rbp"));
+		} else {
+			Integer offset = tTable.lookup(this);
+			t1.setSrcAddrMode(new AddressingMode(-1*offset, "rsp")); }
+		t1.setDestAddrMode(new AddressingMode("r12"));
+		t2.setOpCode("pushq");
+		t2.setSrcAddrMode(new AddressingMode("r12"));
+		tTable.pushCalled();
+		ArrayList<Tile> result = new ArrayList<Tile>();
+		result.add(t1);
+		result.add(t2);
+		return result;
+	}
+	
+}
